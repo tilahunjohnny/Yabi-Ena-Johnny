@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Lock, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ChecklistItem, ProposalIdea, Ring, Status, uid } from '../../shared/types';
 import { money } from '../../shared/logic';
@@ -153,13 +153,28 @@ function RingGate() {
     </div>
   );
 
-  // Pictures all around, with the password box in the middle of them.
-  const mid = Math.ceil(pics.length / 2);
-  const wall = [
-    ...pics.slice(0, mid).map((p) => <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg` }} />),
-    <div key="gate-row" className="gate-row">{card}</div>,
-    ...pics.slice(mid).map((p) => <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg` }} />),
-  ];
+  // Pictures sit on rings around the password box (wide screens), or flow around it (narrow screens).
+  const placed = useMemo(() => {
+    const n = pics.length;
+    const single = n <= 8;
+    const outerN = single ? n : Math.ceil(n * 0.6);
+    const innerN = n - outerN;
+    return pics.map((p, i) => {
+      const outer = i < outerN;
+      const count = outer ? outerN : innerN;
+      const k = outer ? i : i - outerN;
+      const stagger = outer ? 0 : Math.PI / Math.max(1, count); // offset the inner ring so pictures interleave
+      const theta = -Math.PI / 2 + (2 * Math.PI * k) / Math.max(1, count) + stagger;
+      const [rx, ry] = single ? [36, 36] : outer ? [41, 42] : [33, 30];
+      return { ...p, x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
+    });
+  }, [pics]);
+
+  const pic = (p: (typeof placed)[number]) => (
+    <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg`, ['--x' as any]: `${p.x}%`, ['--y' as any]: `${p.y}%` }} />
+  );
+  const mid = Math.ceil(placed.length / 2);
+  const wall = [...placed.slice(0, mid).map(pic), <div key="gate-row" className="gate-row">{card}</div>, ...placed.slice(mid).map(pic)];
   return (
     <div className="page" style={{ maxWidth: 1100 }}>
       <div className="wall">{wall}</div>
