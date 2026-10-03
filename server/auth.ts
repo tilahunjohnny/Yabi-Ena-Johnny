@@ -16,11 +16,6 @@ const page = (error = '') => `<!doctype html><html lang="en"><head><meta charset
 @font-face{font-family:'DM Sans';font-weight:700;font-style:normal;font-display:swap;src:url(/welcome/fonts/dm-sans-700.woff2) format('woff2')}
 *{box-sizing:border-box}html,body{height:100%}
 body{margin:0;background:#1F1E1A;color:#F4F1E6;font:15px 'DM Sans',system-ui,sans-serif;overflow-x:hidden}
-.bg{position:fixed;inset:0;z-index:0}
-.bg i{position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(22px) saturate(1.15);opacity:0;animation:cross 30s infinite,drift 30s ease-in-out infinite alternate}
-.bg i:nth-child(2){animation-delay:6s}.bg i:nth-child(3){animation-delay:12s}.bg i:nth-child(4){animation-delay:18s}.bg i:nth-child(5){animation-delay:24s}
-@keyframes cross{0%{opacity:0}5%{opacity:.95}20%{opacity:.95}26%{opacity:0}100%{opacity:0}}
-@keyframes drift{from{transform:scale(1.04)}to{transform:scale(1.14) translateY(-1.5%)}}
 .veil{position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at 50% 40%,rgba(44,40,32,.22),rgba(31,30,26,.78) 80%),linear-gradient(180deg,rgba(44,40,32,.28),rgba(31,30,26,.62))}
 main{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 0 36px}
 .arches{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,1.8vw,22px);width:min(980px,92vw);align-items:end}
@@ -38,10 +33,10 @@ input{background:rgba(255,255,255,.07);color:#F4F1E6;margin-bottom:10px;outline:
 button{background:#F4F1E6;color:#2A2A25;font-weight:600;border:0;cursor:pointer;transition:filter .15s}button:hover{filter:brightness(1.08)}
 .e{color:#F0A596;margin-top:12px;font-size:13.5px}
 @media (max-width:560px){.a1,.a5{--lift:0px}.a2,.a4{--lift:-14px}.a3{--lift:-30px}.a{border-width:1px;box-shadow:0 10px 26px rgba(0,0,0,.5)}}
-@media (prefers-reduced-motion:reduce){.bg i,.a,form{animation:none!important;opacity:1}.bg i:not(:first-child){display:none}.a{transform:translateY(var(--lift))}}
+@media (prefers-reduced-motion:reduce){.a,form{animation:none!important;opacity:1}.a{transform:translateY(var(--lift))}}
 </style></head>
 <body>
-<div class="bg">${PHOTOS.map((u) => `<i style="background-image:url(${u})"></i>`).join('')}</div><div class="veil"></div>
+<div class="veil"></div>
 <main>
   <div class="arches">${PHOTOS.map((u, i) => `<figure class="a a${i + 1}"><img src="${u}" alt="" ${i > 1 ? 'loading="eager"' : 'fetchpriority="high"'}></figure>`).join('')}</div>
   <form method="post" action="/login">
