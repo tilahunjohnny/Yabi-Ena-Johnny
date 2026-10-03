@@ -1,0 +1,162 @@
+export type Status = 'idea' | 'shortlist' | 'chosen' | 'rejected';
+
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description: string;
+  kind: 'vendor' | 'people';
+}
+
+export interface Option {
+  id: string;
+  categoryId: string;
+  name: string;
+  vendor: string; // vendor name, or role for "people" categories
+  url: string;
+  location: string;
+  cost: number;
+  rating: number; // 0-5
+  status: Status;
+  pros: string;
+  cons: string;
+  notes: string;
+  /** Scenario ids this option applies to. Empty = applies to every scenario. */
+  scenarioIds: string[];
+  /** How many months before the wedding this must be booked. */
+  leadTimeMonths: number;
+  /** Free text, e.g. "Booked through Sept 2027". */
+  availability: string;
+  tags: string[];
+  custom: Record<string, string>;
+  createdAt: string;
+}
+
+export interface Milestone {
+  id: string;
+  title: string;
+  monthsBefore: number;
+  categoryId: string;
+  done: boolean;
+}
+
+export interface Scenario {
+  id: string;
+  name: string;
+  date: string; // ISO yyyy-mm-dd
+  color: string;
+  notes: string;
+  milestones: Milestone[];
+}
+
+export interface BudgetLine {
+  categoryId: string;
+  min: number;
+  target: number;
+  max: number;
+}
+
+export interface Settings {
+  coupleNames: string;
+  totalBudget: number;
+  guestCount: number;
+  currency: string;
+}
+
+export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  author: string;
+  categoryId: string;
+  decision: string;
+  resolved: boolean;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  actions?: string[];
+  createdAt: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: string;
+}
+
+export type TreeKind = 'question' | 'option' | 'outcome';
+export interface TreeNode {
+  id: string;
+  type: 'decision';
+  position: { x: number; y: number };
+  data: { label: string; kind: TreeKind; note?: string };
+}
+export interface TreeEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface Ring {
+  id: string;
+  name: string;
+  vendor: string;
+  url: string;
+  price: number;
+  stone: string;
+  carat: string;
+  metal: string;
+  style: string;
+  rating: number;
+  status: Status;
+  notes: string;
+  createdAt: string;
+}
+
+export interface ProposalIdea {
+  id: string;
+  name: string;
+  location: string;
+  cost: number;
+  vibe: string;
+  rating: number;
+  status: Status;
+  pros: string;
+  cons: string;
+  notes: string;
+  createdAt: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  categoryId: string;
+  done: boolean;
+  note: string;
+}
+
+export interface AppState {
+  version: number;
+  settings: Settings;
+  categories: Category[];
+  /** Array order inside a category == rank order (index 0 is #1). */
+  options: Option[];
+  scenarios: Scenario[];
+  budget: BudgetLine[];
+  notes: Note[];
+  chats: Chat[];
+  tree: { nodes: TreeNode[]; edges: TreeEdge[] };
+  rings: Ring[];
+  proposals: ProposalIdea[];
+  proposalChecklist: ChecklistItem[];
+  checklist: ChecklistItem[];
+}
+
+export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`;
