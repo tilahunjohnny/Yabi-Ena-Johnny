@@ -79,3 +79,21 @@ export function balanceToTotal(state: AppState): BudgetLine[] {
 }
 
 export const sumTargets = (state: AppState) => visibleLines(state).reduce((a, l) => a + l.target, 0);
+
+/**
+ * Cost per guest. Only the things that scale with headcount count: the venue and food & drink.
+ * `budgeted` uses what you allocated on the sliders; `picks` uses what your leading options cost.
+ */
+export function perGuest(state: AppState, picks: (categoryId: string) => number) {
+  const ids = ['venue', 'catering'];
+  const guests = state.settings.guestCount;
+  const budgeted = ids.reduce((a, id) => a + (state.budget.find((b) => b.categoryId === id)?.target ?? 0), 0);
+  const fromPicks = ids.reduce((a, id) => a + picks(id), 0);
+  return {
+    guests,
+    budgeted: guests > 0 ? budgeted / guests : 0,
+    fromPicks: guests > 0 ? fromPicks / guests : 0,
+    budgetedTotal: budgeted,
+    picksTotal: fromPicks,
+  };
+}

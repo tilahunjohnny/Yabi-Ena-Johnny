@@ -12,13 +12,14 @@ A private wedding-planning workspace: store, compare and rank every option, trac
 | **Budget** | Min / target / max range for every category, a visual band, and a live estimate from your chosen (or #1) option vs. your total budget. |
 | **Decision tree** | Drag-and-drop canvas (decisions, options, outcomes) with labelled "if…" lines. |
 | **Discussions** | A log of what you talked about and decided, tagged by category, with open/resolved. |
+| **Idea board** | Save articles, Instagram posts, Pinterest pins and videos. Paste a link and it grabs the title and a thumbnail (kept on your own storage so it never expires); add notes, tags, a category, favourites, and a "look at this again N months before" reminder that counts back from the plan you're viewing. |
 | **Checklist** | ~45 prompts of "things to think about", grouped by category, plus your own. |
 | **Ring & Proposal** | Collect rings from vendors with a top choice, brainstorm/rank proposal locations, and a prep list. |
 | **Prices by day** | Any option can carry different prices for Mon–Thu, Fri, Sat and Sun (and a season). Under a plan, the price follows that plan's weekday, so moving Plan A from a Saturday to a Friday updates the venue cost and the budget estimate. |
 | **Assistant (Claude)** | Chat with saved threads. **Upload files** (PDF, Word, Excel, images, CSV) and it reads each price sheet and adds every option with its prices by day. Paste a link and it reads the page and adds the option; ask it to re-rank, change costs, adjust the budget, log notes, add timelines or tree branches. |
 | **Settings** | Names, currency, budget, guest count, category editor, JSON export/import. |
 
-Data lives in `data/db.json` on the server, so you and your partner see the same planner (it refreshes when you switch back to the tab). A copy is also cached in each browser, so it still works if the server is down.
+Per-guest cost counts only the venue and food & drink. Data lives in `data/db.json` (and saved idea pictures in `data/ideas/`) on the server, so you and your partner see the same planner (it refreshes when you switch back to the tab). A copy is also cached in each browser, so it still works if the server is down.
 
 ## Run it
 

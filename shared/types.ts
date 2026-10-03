@@ -181,6 +181,26 @@ export interface Guest {
   createdAt: string;
 }
 
+export type IdeaSource = 'instagram' | 'pinterest' | 'tiktok' | 'youtube' | 'facebook' | 'article' | 'other';
+
+/** A saved link for the Idea Board: an article, Instagram post, Pinterest pin, video, etc. */
+export interface Idea {
+  id: string;
+  url: string;
+  title: string;
+  note: string;
+  /** Path of a saved thumbnail (served from the planner's own storage), or '' for none. */
+  image: string;
+  source: IdeaSource;
+  siteName: string;
+  tags: string[];
+  categoryId: string; // '' = general
+  favorite: boolean;
+  /** Months before the wedding to look at this again (0 = no reminder). */
+  revisitMonths: number;
+  createdAt: string;
+}
+
 export interface AppState {
   version: number;
   settings: Settings;
@@ -197,6 +217,7 @@ export interface AppState {
   proposalChecklist: ChecklistItem[];
   checklist: ChecklistItem[];
   guests: Guest[];
+  ideas: Idea[];
 }
 
 export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`;

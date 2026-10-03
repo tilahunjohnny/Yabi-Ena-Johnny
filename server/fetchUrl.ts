@@ -10,8 +10,9 @@ function isPrivate(ip: string): boolean {
   return l === '::1' || l.startsWith('fc') || l.startsWith('fd') || l.startsWith('fe80') || l.startsWith('::ffff:');
 }
 
-async function assertPublic(u: URL) {
+export async function assertPublic(u: URL) {
   if (!/^https?:$/.test(u.protocol)) throw new Error('Only http(s) links are supported.');
+  if (process.env.YEJ_ALLOW_LOCAL_FETCH === '1') return; // automated tests only: never set this on a real server
   const addrs = net.isIP(u.hostname) ? [{ address: u.hostname }] : await dns.lookup(u.hostname, { all: true });
   if (addrs.some((a) => isPrivate(a.address))) throw new Error('Refusing to fetch a private/internal address.');
 }
@@ -52,6 +53,35 @@ export async function fetchUrlText(raw: string): Promise<string> {
     }
     if (!res.ok) throw new Error(`The site responded with HTTP ${res.status}.`);
     return htmlToText(await res.text());
+  }
+  throw new Error('Too many redirects.');
+}
+
+
+/** Fetches a page or image (public addresses only, redirects checked, size-capped). */
+export async function fetchResource(raw: string, opts: { maxBytes: number; accept?: string; timeoutMs?: number; strict?: boolean }): Promise<{ buffer: Buffer; contentType: string; finalUrl: string }> {
+  let url = new URL(raw);
+  for (let hop = 0; hop < 4; hop++) {
+    await assertPublic(url);
+    const res = await fetch(url, {
+      redirect: 'manual',
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 10000),
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; YabiEnaJohnnyBot/1.0; link-preview)', accept: opts.accept ?? '*/*' },
+    });
+    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) { url = new URL(res.headers.get('location')!, url); continue; }
+    if (!res.ok) throw new Error(`The site responded with HTTP ${res.status}.`);
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('Empty response.');
+    const chunks: Buffer[] = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > opts.maxBytes) { await reader.cancel(); if (opts.strict) throw new Error('That file is too large.'); break; } // pages: keep the start, which holds the metadata
+      chunks.push(Buffer.from(value));
+    }
+    return { buffer: Buffer.concat(chunks), contentType: res.headers.get('content-type') ?? '', finalUrl: url.toString() };
   }
   throw new Error('Too many redirects.');
 }

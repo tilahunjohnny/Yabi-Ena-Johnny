@@ -149,6 +149,7 @@ export function migrateState(input: AppState): AppState {
     ...input,
     settings: { ...input.settings, homeCountry: input.settings.homeCountry ?? 'United States' },
     guests: input.guests ?? [],
+    ideas: input.ideas ?? [],
     options: (input.options ?? []).map((o) => ({ ...o, country: o.country ?? '', tiers: o.tiers ?? [], tierId: o.tierId ?? '' })),
   };
   const v = input.version ?? 1;

@@ -183,5 +183,6 @@ export function seedState(): AppState {
     proposalChecklist,
     checklist,
     guests: [],
+    ideas: [],
   };
 }

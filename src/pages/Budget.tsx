@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Scale, Unlock, Wand2 } from 'lucide-react';
 import { estimateFor, money, totals } from '../../shared/logic';
-import { balanceToTotal, changeTotal, moveSlider, STEP, sumTargets, visibleLines } from '../../shared/budget';
+import { balanceToTotal, changeTotal, moveSlider, perGuest, STEP, sumTargets, visibleLines } from '../../shared/budget';
 import { BudgetLine } from '../../shared/types';
 import { useStore } from '../store';
 import { CatIcon, NumInput, PageHead, Seg, tint } from '../components/ui';
@@ -19,6 +19,7 @@ export default function Budget() {
   const t = totals(state, scenarioId);
   const sc = state.scenarios.find((s) => s.id === scenarioId);
   const lines = visibleLines(state);
+  const pg = perGuest(state, (id) => estimateFor(state, id, scenarioId).cost);
   const sum = sumTargets(state);
   const diff = total - sum; // >0 unallocated, <0 over
 
@@ -56,7 +57,10 @@ export default function Budget() {
             <div className="tiny muted">Total budget</div>
             <div className="row" style={{ gap: 10, alignItems: 'baseline' }}>
               <span className="stat">{money(total, cur)}</span>
-              <span className="small muted">{money(total / Math.max(1, state.settings.guestCount), cur)} per guest ({state.settings.guestCount})</span>
+              <span className="small muted" title="Only the venue and food & drink are counted, because those are the costs that grow with the guest list.">
+                <strong style={{ color: 'var(--text)' }}>{pg.guests > 0 ? money(pg.budgeted, cur) : '—'}</strong> per guest for venue + food &amp; drink ({pg.guests} guests)
+                {pg.picksTotal > 0 && pg.guests > 0 && <> · your picks: <strong style={{ color: pg.fromPicks > pg.budgeted ? 'var(--bad)' : 'var(--text)' }}>{money(pg.fromPicks, cur)}</strong></>}
+              </span>
             </div>
           </div>
           <div className="row wrap" style={{ gap: 10 }}>

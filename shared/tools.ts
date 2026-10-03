@@ -1,4 +1,5 @@
-import { AppState, Guest, Option, PriceTier, Status, TreeEdge, TreeNode, Weekday, uid } from './types';
+import { AppState, Guest, Idea, Option, PriceTier, Status, TreeEdge, TreeNode, Weekday, uid } from './types';
+import { detectSource, normalizeUrl } from './ideas';
 import { dayLabel, moveOption } from './logic';
 
 /** Tool schemas exposed to the Claude assistant. (fetch_url is handled by the server.) */
@@ -178,6 +179,19 @@ export const TOOL_DEFS = [
         kind: { type: 'string', enum: ['question', 'option', 'outcome'] },
       },
       required: ['condition', 'outcome'],
+    },
+  },
+  {
+    name: 'add_idea',
+    description: 'Save a link (article, Instagram post, Pinterest pin, video…) or a note to the Idea Board so the couple can look at it again later.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string' }, title: { type: 'string' }, note: { type: 'string', description: 'Why it is worth keeping' },
+        tags: { type: 'array', items: { type: 'string' } }, category: { type: 'string', description: 'Optional category id or name it relates to' },
+        revisit_months: { type: 'number', description: 'Months before the wedding to look at it again (0 = no reminder)' }, favorite: { type: 'boolean' },
+      },
+      required: ['title'],
     },
   },
   {
@@ -418,6 +432,16 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
         edges.push({ id: uid('e'), source: root.id, target: node.id, label: 'then' });
       }
       return { state: { ...state, tree: { nodes, edges } }, message: 'Decision tree updated.', action: `Tree: if ${input.condition} → ${input.outcome}` };
+    }
+    case 'add_idea': {
+      const url = input.url ? normalizeUrl(String(input.url)) : '';
+      const cat = input.category ? findCategory(state, input.category) : undefined;
+      const idea: Idea = {
+        id: uid('idea'), url, title: String(input.title), note: String(input.note ?? ''), image: '', source: url ? detectSource(url) : 'other', siteName: url ? new URL(url).hostname.replace(/^www\./, '') : '',
+        tags: ((input.tags as string[]) ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean), categoryId: cat?.id ?? '', favorite: !!input.favorite,
+        revisitMonths: Math.max(0, Number(input.revisit_months) || 0), createdAt: new Date().toISOString(),
+      };
+      return { state: { ...state, ideas: [idea, ...state.ideas] }, message: `Saved "${idea.title}" to the Idea Board.`, action: `Saved idea "${idea.title}"` };
     }
     case 'add_guest': {
       const side = norm(input.side).startsWith('j') ? 'johnny' : 'yabi';

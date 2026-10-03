@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import { CalendarRange, CheckSquare, CloudOff, Cloud, Gem, LogOut, Users, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
+import { CalendarRange, CheckSquare, CloudOff, Lightbulb, Cloud, Gem, LogOut, Users, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
 import { useStore } from './store';
 import { CatIcon, tint } from './components/ui';
 import { visibleCategories } from '../shared/logic';
 import Guests from './pages/Guests';
+import IdeaBoard from './pages/IdeaBoard';
 import { loadGotcha } from './lib/gotcha';
+import Backdrop from './components/Backdrop';
 import Dashboard from './pages/Dashboard';
 import CategoryPage from './pages/CategoryPage';
 import Budget from './pages/Budget';
@@ -45,6 +47,7 @@ export default function App() {
           {link('/budget', <PiggyBank size={17} />, 'Budget')}
           {link('/timeline', <CalendarRange size={17} />, 'Timelines')}
           {link('/guests', <Users size={17} />, 'Guest List')}
+          {link('/ideas', <Lightbulb size={17} />, 'Idea Board')}
           {link('/decisions', <GitBranch size={17} />, 'Decision tree')}
           {link('/discussions', <MessagesSquare size={17} />, 'Discussions')}
           {link('/checklist', <CheckSquare size={17} />, 'Checklist')}
@@ -83,12 +86,14 @@ export default function App() {
           <button className="btn icon ghost" onClick={toggleTheme} aria-label="Toggle theme">{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
           {passwordProtected && <button className="btn icon ghost" onClick={logout} aria-label="Log out" title="Log out"><LogOut size={17} /></button>}
         </header>
+        <Backdrop />
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/assistant" element={<Assistant />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/guests" element={<Guests />} />
+          <Route path="/ideas" element={<IdeaBoard />} />
           <Route path="/decisions" element={<Decisions />} />
           <Route path="/discussions" element={<Discussions />} />
           <Route path="/checklist" element={<Checklist />} />

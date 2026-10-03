@@ -3,6 +3,7 @@ import { ArrowRight, Gem, MapPin, MessageSquare, Sparkles, Users } from 'lucide-
 import { costFor, guestCounts, isAbroad, money, monthsBetween, today, top3, totals } from '../../shared/logic';
 import { useStore } from '../store';
 import { fmtDate, Stars, tint } from '../components/ui';
+import { HERO_PHOTO } from '../components/Backdrop';
 
 export default function Dashboard() {
   const { state, scenarioId, setScenarioId, ringUnlocked } = useStore();
@@ -15,7 +16,7 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      <div className="hero" style={{ marginBottom: 26 }}>
+      <div className="hero" style={{ marginBottom: 26, ['--hero-img' as any]: `url(${HERO_PHOTO})` }}>
         <div className="eyebrow">Our wedding, together</div>
         <h1 style={{ margin: '8px 0 6px', fontSize: '3rem' }}>{state.settings.coupleNames}</h1>
         <div className="muted">Three possible dates, one planner. Pick a plan to see everything through it.</div>

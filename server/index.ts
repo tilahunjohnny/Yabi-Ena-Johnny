@@ -7,6 +7,7 @@ import { seedState } from '../shared/seed';
 import { migrateState } from '../shared/migrate';
 import { runChat } from './chat';
 import { authMiddleware } from './auth';
+import { registerIdeaRoutes } from './ideas';
 import { gotchaPath, mergeSecrets, registerRingRoutes, ringUnlocked, stripSecrets } from './ring';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,6 +64,10 @@ app.use('/welcome', express.static(path.join(root, 'welcome'), { maxAge: '7d' })
 app.use(authMiddleware(process.env.APP_PASSWORD));
 if (!process.env.APP_PASSWORD) console.warn('WARNING: APP_PASSWORD is not set — anyone who can reach this server can edit your planner.');
 
+// Saved idea thumbnails live next to the planner data so they survive restarts.
+const IDEA_IMG_DIR = path.join(path.dirname(DB_FILE), 'ideas');
+registerIdeaRoutes(app, IDEA_IMG_DIR);
+app.use('/idea-img', express.static(IDEA_IMG_DIR, { maxAge: '30d' }));
 app.get('/api/auth/info', (_req, res) => res.json({ passwordProtected: !!process.env.APP_PASSWORD }));
 registerRingRoutes(app, gotchaPath(root), path.join(path.dirname(DB_FILE), 'ring-comments.json'));
 app.use('/gotcha', express.static(gotchaPath(root), { maxAge: '7d' }));
