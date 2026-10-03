@@ -18,6 +18,7 @@ interface Store {
   ringUnlocked: boolean;
   unlockRing: (password: string) => Promise<boolean>;
   lockRing: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const Ctx = createContext<Store>(null as unknown as Store);
@@ -135,6 +136,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await reloadFromServer(); // replaces the in-memory and cached copy with the stripped one
   }, [reloadFromServer]);
 
+  const logout = useCallback(async () => {
+    try { await fetch('/logout', { method: 'POST' }); } catch { /* offline: still clear local data below */ }
+    // Don't leave the planner (or ring data) cached in this browser after signing out.
+    try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+    window.location.assign('/'); // the server now answers with the password page
+  }, []);
+
   const setScenarioId = (id: string) => {
     setScenarioIdRaw(id);
     localStorage.setItem('yej:scenario', id);
@@ -148,7 +156,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const activeScenario = scenarioId === 'all' || state.scenarios.some((s) => s.id === scenarioId) ? scenarioId : 'all';
 
   return (
-    <Ctx.Provider value={{ state, update, replace, scenarioId: activeScenario, setScenarioId, sync, theme, toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), toast, toastMsg, ringUnlocked, unlockRing, lockRing }}>
+    <Ctx.Provider value={{ state, update, replace, scenarioId: activeScenario, setScenarioId, sync, theme, toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), toast, toastMsg, ringUnlocked, unlockRing, lockRing, logout }}>
       {children}
     </Ctx.Provider>
   );

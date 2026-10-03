@@ -47,11 +47,19 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.get('/healthz', (_req, res) => res.send('ok'));
+// Logging out must work from any state, so it sits before the auth gate. It only clears this browser's cookies.
+app.post('/logout', (_req, res) => {
+  const expired = 'HttpOnly; SameSite=Lax; Path=/; Max-Age=0';
+  res.setHeader('Set-Cookie', [`yej_auth=; ${expired}`, `yej_ring=; ${expired}`]);
+  res.json({ ok: true });
+});
+
 // Photos for the sign-in screen must load before anyone is signed in.
 app.use('/welcome', express.static(path.join(root, 'welcome'), { maxAge: '7d' }));
 app.use(authMiddleware(process.env.APP_PASSWORD));
 if (!process.env.APP_PASSWORD) console.warn('WARNING: APP_PASSWORD is not set — anyone who can reach this server can edit your planner.');
 
+app.get('/api/auth/info', (_req, res) => res.json({ passwordProtected: !!process.env.APP_PASSWORD }));
 registerRingRoutes(app, gotchaPath(root), path.join(path.dirname(DB_FILE), 'ring-comments.json'));
 app.use('/gotcha', express.static(gotchaPath(root), { maxAge: '7d' }));
 

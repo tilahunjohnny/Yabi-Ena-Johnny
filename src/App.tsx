@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import { CalendarRange, CheckSquare, CloudOff, Cloud, Gem, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
+import { CalendarRange, CheckSquare, CloudOff, Cloud, Gem, LogOut, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
 import { useStore } from './store';
 import { CatIcon } from './components/ui';
 import Dashboard from './pages/Dashboard';
@@ -15,7 +15,9 @@ import Assistant from './pages/Assistant';
 import Settings from './pages/Settings';
 
 export default function App() {
-  const { state, scenarioId, setScenarioId, sync, theme, toggleTheme, toastMsg } = useStore();
+  const { state, scenarioId, setScenarioId, sync, theme, toggleTheme, toastMsg, logout } = useStore();
+  const [passwordProtected, setPasswordProtected] = useState(false);
+  useEffect(() => { fetch('/api/auth/info').then((r) => r.json()).then((d) => setPasswordProtected(!!d.passwordProtected)).catch(() => {}); }, []);
   const [open, setOpen] = useState(false);
   const loc = useLocation();
   useEffect(() => { setOpen(false); window.scrollTo(0, 0); }, [loc.pathname]);
@@ -52,6 +54,11 @@ export default function App() {
           {link('/ring', <Gem size={17} />, 'Ring & Proposal')}
           {link('/settings', <Cog size={17} />, 'Settings')}
         </nav>
+        {passwordProtected && (
+          <button className="btn ghost" onClick={logout} style={{ marginTop: 'auto', justifyContent: 'flex-start', opacity: 0.85 }}>
+            <LogOut size={16} /> Log out
+          </button>
+        )}
       </aside>
 
       <div className="main">
@@ -68,6 +75,7 @@ export default function App() {
             {sync === 'offline' ? <CloudOff size={14} /> : <Cloud size={14} />}{sync === 'saving' ? 'Saving…' : sync === 'offline' ? 'Local only' : sync === 'loading' ? 'Loading…' : 'Saved'}
           </span>
           <button className="btn icon ghost" onClick={toggleTheme} aria-label="Toggle theme">{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
+          {passwordProtected && <button className="btn icon ghost" onClick={logout} aria-label="Log out" title="Log out"><LogOut size={17} /></button>}
         </header>
         <Routes>
           <Route path="/" element={<Dashboard />} />
