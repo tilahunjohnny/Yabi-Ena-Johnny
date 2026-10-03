@@ -165,6 +165,9 @@ export const FIRST_JEWELER = {
   spec: 'Helen Milgrain Solitaire', notes: 'Best option so far. Milgrain solitaire; ask about cushion 2.8–3 ct, D–F, VVS1–VVS2 lab diamond, a floral basket setting, price and turnaround.',
 };
 
+/** The first quote from Roen (pre-tax, a range). */
+export const ROEN_QUOTE = { amount: 9200, amountHigh: 9500, note: 'Pre-tax' };
+
 /** What she has asked for so far. Filled in once, only into fields that are still empty. */
 export const HER_RING: Partial<RingBrief> = {
   description: 'Cushion-cut lab diamond in a floral basket setting with milgrain edges.',
@@ -184,7 +187,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 9,
+    version: 10,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],

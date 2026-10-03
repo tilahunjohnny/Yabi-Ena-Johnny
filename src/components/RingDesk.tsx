@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react';
 import { Clock, ExternalLink, ImagePlus, Pencil, Plus, Trash2, Trophy, Zap } from 'lucide-react';
 import { Jeweler, JewelerStatus, RingBrief, RingHint, RingQuote, uid } from '../../shared/types';
-import { compareJewelers, daysBetween, latestQuote, orderBy, readyEstimate, todayIso } from '../../shared/ringplan';
+import { compareJewelers, daysBetween, latestHigh, latestQuote, orderBy, readyEstimate, todayIso } from '../../shared/ringplan';
 import { money } from '../../shared/logic';
 import { useStore } from '../store';
 import { deleteRingImage, uploadRingImage } from '../lib/ringImages';
 import { Empty, Field, fmtDate, Modal, NumInput } from './ui';
+
+/** "$9,200–$9,500" for a range, "$9,200" for a single price. */
+export const priceText = (low: number, high: number | undefined, cur: string) => (high && high > low ? `${money(low, cur)}–${money(high, cur)}` : money(low, cur));
 
 export const JEWELER_STATUS: Record<JewelerStatus, string> = { researching: 'Researching', inquired: 'Inquired', quoted: 'Quoted', ordered: 'Ordered', ready: 'Ready', passed: 'Passed' };
 const STATUS_ORDER: JewelerStatus[] = ['researching', 'inquired', 'quoted', 'ordered', 'ready', 'passed'];
@@ -71,7 +74,7 @@ export function RingDashboard() {
         {facts.length > 0 && <dl className="ring-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
         <div className="ring-stats">
           <div className="s"><span className="tiny muted">Budget</span><b>{b.budget ? money(b.budget, cur) : '—'}</b></div>
-          <div className="s"><span className="tiny muted">Lowest quote{lowest ? ` · ${lowest.j.name}` : ''}</span><b className={lowest && b.budget && lowest.price > b.budget ? 'bad-t' : ''}>{lowest ? money(lowest.price, cur) : '—'}</b></div>
+          <div className="s"><span className="tiny muted">Lowest quote{lowest ? ` · ${lowest.j.name}` : ''}</span><b className={lowest && b.budget && lowest.high > b.budget ? 'bad-t' : ''}>{lowest ? priceText(lowest.price, lowest.high, cur) : '—'}</b></div>
           <div className="s"><span className="tiny muted">Soonest ready{soon ? ` · ${soon.j.name}` : ''}</span><b>{soon ? fmtDate(soon.ready.date) : '—'}</b></div>
           <div className="s"><span className="tiny muted">{daysToProposal !== null ? 'Proposal in' : 'Places inquiring'}</span><b>{daysToProposal !== null ? `${Math.max(0, daysToProposal)} days` : inquiring}</b></div>
         </div>
@@ -146,13 +149,14 @@ function JewelerModal({ initial, isNew, onClose }: { initial: Jeweler; isNew: bo
   const { update, state } = useStore();
   const [j, setJ] = useState(initial);
   const [amt, setAmt] = useState(0);
+  const [amtHigh, setAmtHigh] = useState(0);
   const [qnote, setQnote] = useState('');
   const set = <K extends keyof Jeweler>(k: K, v: Jeweler[K]) => setJ((p) => ({ ...p, [k]: v }));
   const addQuote = () => {
     if (!amt) return;
-    const q: RingQuote = { id: uid('q'), date: todayIso(), amount: amt, note: qnote.trim() };
+    const q: RingQuote = { id: uid('q'), date: todayIso(), amount: Math.min(amt, amtHigh || amt), ...(amtHigh > amt ? { amountHigh: amtHigh } : amt > amtHigh && amtHigh ? { amountHigh: amt } : {}), note: qnote.trim() };
     setJ((p) => ({ ...p, quotes: [...p.quotes, q], status: p.status === 'researching' || p.status === 'inquired' ? 'quoted' : p.status }));
-    setAmt(0); setQnote('');
+    setAmt(0); setAmtHigh(0); setQnote('');
   };
   const save = () => { update((s) => ({ ...s, jewelers: isNew ? [...s.jewelers, j] : s.jewelers.map((x) => (x.id === j.id ? j : x)) })); onClose(); };
   const cur = state.settings.currency;
@@ -173,12 +177,13 @@ function JewelerModal({ initial, isNew, onClose }: { initial: Jeweler; isNew: bo
         {j.quotes.length === 0 && <div className="small muted" style={{ marginTop: 6 }}>No price yet.</div>}
         {j.quotes.map((q, i) => (
           <div key={q.id} className="row between" style={{ padding: '7px 0', borderTop: i ? '1px solid var(--border)' : 0 }}>
-            <span className="small"><b>{money(q.amount, cur)}</b> <span className="muted">· {fmtDate(q.date)}{q.note ? ` · ${q.note}` : ''}{i === j.quotes.length - 1 && j.quotes.length > 1 ? ' · current' : ''}</span></span>
+            <span className="small"><b>{priceText(q.amount, q.amountHigh, cur)}</b> <span className="muted">· {fmtDate(q.date)}{q.note ? ` · ${q.note}` : ''}{i === j.quotes.length - 1 && j.quotes.length > 1 ? ' · current' : ''}</span></span>
             <button className="btn sm icon ghost danger" aria-label="Remove quote" onClick={() => setJ((p) => ({ ...p, quotes: p.quotes.filter((x) => x.id !== q.id) }))}><Trash2 size={13} /></button>
           </div>
         ))}
         <div className="row" style={{ marginTop: 8 }}>
           <NumInput value={amt} onChange={setAmt} prefix="$" />
+          <NumInput value={amtHigh} onChange={setAmtHigh} prefix="to $" />
           <input value={qnote} onChange={(e) => setQnote(e.target.value)} placeholder="Note (e.g. after negotiating)" aria-label="Quote note" />
           <button className="btn" type="button" onClick={addQuote} disabled={!amt}><Plus size={15} /> Add quote</button>
         </div>
@@ -214,6 +219,7 @@ export function Jewelers({ editor }: { editor: ReturnType<typeof useJewelerEdito
     <div className="grid auto">
       {sorted.map((j) => {
         const price = latestQuote(j);
+        const high = latestHigh(j);
         const ready = readyEstimate(j, ringBrief.needBy);
         return (
           <div key={j.id} className="card flat" style={{ opacity: j.status === 'passed' ? 0.55 : 1 }}>
@@ -222,7 +228,7 @@ export function Jewelers({ editor }: { editor: ReturnType<typeof useJewelerEdito
             <div className="small muted">{[j.location, j.contact].filter(Boolean).join(' · ') || '—'}</div>
             {j.spec && <div className="small" style={{ marginTop: 6 }}>{j.spec}</div>}
             <div className="row between" style={{ margin: '10px 0' }}>
-              <span className="price">{price ? money(price, cur) : 'No quote yet'}</span>
+              <span className="price">{price ? priceText(price, high, cur) : 'No quote yet'}</span>
               {j.url && <a href={j.url} target="_blank" rel="noreferrer" className="row small" style={{ gap: 4 }}><ExternalLink size={13} /> Site</a>}
             </div>
             <div className="small muted row" style={{ gap: 6 }}><Clock size={13} />{j.leadWeeks ? `${j.leadWeeks} wk turnaround${ready.date ? ` · ready ${ready.firm ? '' : 'if ordered today: '}${fmtDate(ready.date)}` : ''}` : 'Turnaround not known'}</div>
@@ -263,12 +269,12 @@ export function Compare({ editor }: { editor: ReturnType<typeof useJewelerEditor
           <table>
             <thead><tr><th style={{ width: 'auto' }}>Jeweler</th><th style={{ width: 'auto' }}>Current quote</th><th style={{ width: 'auto' }}>vs budget</th><th style={{ width: 'auto' }}>Deposit</th><th style={{ width: 'auto' }}>Turnaround</th><th style={{ width: 'auto' }}>Ready</th><th style={{ width: 'auto' }}>Order by</th></tr></thead>
             <tbody>
-              {rows.map(({ j, price, change, ready, vsBudget }) => {
+              {rows.map(({ j, price, high, change, ready, vsBudget }) => {
                 const ob = orderBy(j, b.needBy);
                 return (
                   <tr key={j.id}>
                     <td><a href="#" onClick={(e) => { e.preventDefault(); editor.open(j); }}><b>{j.name}</b></a><div className="tiny muted">{JEWELER_STATUS[j.status]}{j.spec ? ` · ${j.spec}` : ''}</div></td>
-                    <td>{price ? <><b>{money(price, cur)}</b>{j.id === cheapest && rows.filter((r) => r.price).length > 1 && <span className="pill" style={{ marginLeft: 6 }}><Trophy size={11} /> lowest</span>}{change !== 0 && <div className={`tiny ${change < 0 ? 'good-t' : 'bad-t'}`}>{change < 0 ? '↓' : '↑'} {money(Math.abs(change), cur)} since first quote</div>}</> : '—'}</td>
+                    <td>{price ? <><b>{priceText(price, high, cur)}</b>{j.id === cheapest && rows.filter((r) => r.price).length > 1 && <span className="pill" style={{ marginLeft: 6 }}><Trophy size={11} /> lowest</span>}{change !== 0 && <div className={`tiny ${change < 0 ? 'good-t' : 'bad-t'}`}>{change < 0 ? '↓' : '↑'} {money(Math.abs(change), cur)} since first quote</div>}</> : '—'}</td>
                     <td>{vsBudget === null ? '—' : <span className={vsBudget > 0 ? 'bad-t' : 'good-t'}>{vsBudget > 0 ? '+' : '−'}{money(Math.abs(vsBudget), cur)}</span>}</td>
                     <td>{j.deposit ? money(j.deposit, cur) : '—'}</td>
                     <td>{j.leadWeeks ? `${j.leadWeeks} wk` : '—'}</td>
@@ -302,7 +308,7 @@ export function Compare({ editor }: { editor: ReturnType<typeof useJewelerEditor
           <div className="cmp" style={{ marginTop: 8 }}>
             <table>
               <thead><tr><th style={{ width: 'auto' }}>Date</th><th style={{ width: 'auto' }}>Jeweler</th><th style={{ width: 'auto' }}>Price</th><th style={{ width: 'auto' }}>Note</th></tr></thead>
-              <tbody>{log.map(({ j, q }) => <tr key={q.id}><td>{fmtDate(q.date)}</td><td>{j.name}</td><td><b>{money(q.amount, cur)}</b></td><td className="muted">{q.note || '—'}</td></tr>)}</tbody>
+              <tbody>{log.map(({ j, q }) => <tr key={q.id}><td>{fmtDate(q.date)}</td><td>{j.name}</td><td><b>{priceText(q.amount, q.amountHigh, cur)}</b></td><td className="muted">{q.note || '—'}</td></tr>)}</tbody>
             </table>
           </div>
         )}

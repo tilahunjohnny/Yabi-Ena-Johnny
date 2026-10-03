@@ -181,7 +181,8 @@ export interface RingHint {
   heardOn: string; // ISO date or ''
 }
 
-export interface RingQuote { id: string; date: string; amount: number; note: string }
+/** A quote. When the jeweler gives a range, amount is the low end and amountHigh the top end. */
+export interface RingQuote { id: string; date: string; amount: number; amountHigh?: number; note: string }
 export type JewelerStatus = 'researching' | 'inquired' | 'quoted' | 'ordered' | 'ready' | 'passed';
 
 /** A place being asked about the ring, with every price it has quoted and how long it takes. */

@@ -1,6 +1,6 @@
 import { AppState, BudgetLine, Category, Guest, uid } from './types';
 import { balanceToTotal } from './budget';
-import { blankRingBrief, HER_RING, FIRST_JEWELER, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
+import { blankRingBrief, HER_RING, FIRST_JEWELER, ROEN_QUOTE, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
 
 /** Shares the original template used for the budget, to tell untouched defaults from edits. */
 const OLD_SHARES: Record<string, number> = {
@@ -168,6 +168,10 @@ export function migrateState(input: AppState): AppState {
   if (v < 9) {
     const has = s.jewelers.some((j) => j.url === FIRST_JEWELER.url);
     s = { ...s, version: 9, jewelers: has ? s.jewelers : [...s.jewelers, { id: uid('jwl'), contact: '', status: 'researching', inquiredOn: '', quotes: [], deposit: 0, leadWeeks: 0, orderedOn: '', quoteExpires: '', createdAt: new Date().toISOString(), ...FIRST_JEWELER }] };
+  }
+  if (v < 10) {
+    // Roen's first quote, added once and only if nothing has been logged for it yet.
+    s = { ...s, version: 10, jewelers: s.jewelers.map((j) => (j.url === FIRST_JEWELER.url && j.quotes.length === 0 ? { ...j, status: 'quoted' as const, quotes: [{ id: uid('q'), date: new Date().toISOString().slice(0, 10), ...ROEN_QUOTE }] } : j)) };
   }
   return s;
 }

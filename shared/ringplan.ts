@@ -8,6 +8,8 @@ export const daysBetween = (fromIso: string, toIso: string) => Math.round((parse
 
 /** The jeweler's current price: the most recent quote (0 when none). */
 export const latestQuote = (j: Jeweler) => j.quotes[j.quotes.length - 1]?.amount ?? 0;
+/** The top of the current quote (equals the price when it is not a range). */
+export const latestHigh = (j: Jeweler) => { const q = j.quotes[j.quotes.length - 1]; return q ? Math.max(q.amount, q.amountHigh ?? 0) : 0; };
 export const firstQuote = (j: Jeweler) => j.quotes[0]?.amount ?? 0;
 
 export interface ReadyEstimate {
@@ -31,7 +33,7 @@ export function readyEstimate(j: Jeweler, needBy: string, today = todayIso()): R
 /** The latest day an order can be placed to still have the ring by the needed-by date. */
 export const orderBy = (j: Jeweler, needBy: string) => (needBy && j.leadWeeks ? addDays(needBy, -j.leadWeeks * 7) : '');
 
-export interface CompareRow { j: Jeweler; price: number; change: number; ready: ReadyEstimate; vsBudget: number | null }
+export interface CompareRow { j: Jeweler; price: number; high: number; change: number; ready: ReadyEstimate; vsBudget: number | null }
 
 /** One row per jeweler still in play, with the cheapest and the soonest flagged. */
 export function compareJewelers(jewelers: Jeweler[], brief: RingBrief, today = todayIso()) {
@@ -39,7 +41,7 @@ export function compareJewelers(jewelers: Jeweler[], brief: RingBrief, today = t
     .filter((j) => j.status !== 'passed')
     .map((j) => {
       const price = latestQuote(j);
-      return { j, price, change: j.quotes.length > 1 ? price - firstQuote(j) : 0, ready: readyEstimate(j, brief.needBy, today), vsBudget: brief.budget && price ? price - brief.budget : null };
+      return { j, price, high: latestHigh(j), change: j.quotes.length > 1 ? price - firstQuote(j) : 0, ready: readyEstimate(j, brief.needBy, today), vsBudget: brief.budget && price ? latestHigh(j) - brief.budget : null };
     });
   const priced = rows.filter((r) => r.price > 0);
   const timed = rows.filter((r) => r.ready.date);
