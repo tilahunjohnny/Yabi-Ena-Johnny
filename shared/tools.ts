@@ -360,7 +360,7 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       return { state: { ...state, guests: state.guests.filter((x) => x.id !== g.id) }, message: `Removed ${g.name}.`, action: `Removed guest ${g.name}` };
     }
     case 'add_category': {
-      const cat = { id: uid('cat'), name: String(input.name), icon: 'sparkles', color: '#B59A72', description: input.description ?? '', kind: 'vendor' as const };
+      const cat = { id: uid('cat'), name: String(input.name), icon: 'sparkles', color: '#8F8670', description: input.description ?? '', kind: 'vendor' as const };
       return { state: { ...state, categories: [...state.categories, cat], budget: [...state.budget, { categoryId: cat.id, min: 0, target: 0, max: 0 }] }, message: `Created category ${cat.id}.`, action: `New category "${cat.name}"` };
     }
     default:

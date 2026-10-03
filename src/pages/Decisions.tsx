@@ -97,7 +97,7 @@ function Canvas() {
         >
           <Background gap={22} />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable nodeColor="#7B5B3D" maskColor="rgba(128,128,150,0.18)" style={{ borderRadius: 10 }} />
+          <MiniMap pannable zoomable nodeColor="#8F8670" maskColor="rgba(128,128,150,0.18)" style={{ borderRadius: 10 }} />
         </ReactFlow>
         {(node || edge) && (
           <div className="card tree-panel col">

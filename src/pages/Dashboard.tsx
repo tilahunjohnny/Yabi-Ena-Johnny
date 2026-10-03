@@ -30,7 +30,7 @@ export default function Dashboard() {
           const done = s.milestones.filter((m) => m.done).length;
           const active = scenarioId === s.id;
           return (
-            <div key={s.id} className="card plan" style={{ borderTop: `4px solid ${s.color}`, outline: active ? `2px solid ${s.color}` : undefined }}>
+            <div key={s.id} className="card plan" style={{ borderTop: `4px solid ${tint(s.color)}`, outline: active ? `2px solid ${tint(s.color)}` : undefined }}>
               <div className="row between">
                 <h3 style={{ color: tint(s.color) }}>{s.name}</h3>
                 {active ? <span className="pill shortlist">Viewing</span> : <button className="btn sm" onClick={() => setScenarioId(s.id)}>View plan</button>}

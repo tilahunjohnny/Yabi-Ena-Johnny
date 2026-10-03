@@ -84,7 +84,7 @@ export default function Timeline() {
           const list = items(sc);
           const now = today();
           return (
-            <div key={sc.id} className="card" style={{ borderTop: `3px solid ${sc.color}` }}>
+            <div key={sc.id} className="card" style={{ borderTop: `3px solid ${tint(sc.color)}` }}>
               <div className="row between wrap" style={{ gap: 8 }}>
                 <input value={sc.name} onChange={(e) => patch(sc.id, { name: e.target.value })} style={{ fontFamily: 'var(--serif)', fontSize: '1.3rem', fontWeight: 600, background: 'transparent', border: '1px solid transparent', padding: '4px 8px', width: 'auto', flex: 1 }} aria-label="Scenario name" />
                 <div className="row" style={{ gap: 2 }}>
@@ -98,14 +98,14 @@ export default function Timeline() {
               </div>
               <Field label="Notes"><textarea value={sc.notes} onChange={(e) => patch(sc.id, { notes: e.target.value })} placeholder="Why this date? What does it unlock or cost us?" style={{ minHeight: 56 }} /></Field>
               <div className="sep" />
-              <div className="tl" style={{ ['--c' as any]: sc.color }}>
+              <div className="tl" style={{ ['--c' as any]: tint(sc.color) }}>
                 {list.map((it) => {
                   const late = it.date < now && !it.done;
                   return (
                     <div key={it.key} className={`tl-item ${it.done ? 'done' : ''} ${late ? 'late' : ''}`}>
                       <div className="row" style={{ gap: 10 }}>
                         {it.kind === 'milestone' ? (
-                          <input type="checkbox" style={{ width: 16, height: 16, padding: 0, accentColor: sc.color }} checked={!!it.done} onChange={() => patch(sc.id, { milestones: sc.milestones.map((m) => (m.id === it.msId ? { ...m, done: !m.done } : m)) })} />
+                          <input type="checkbox" style={{ width: 16, height: 16, padding: 0, accentColor: tint(sc.color) }} checked={!!it.done} onChange={() => patch(sc.id, { milestones: sc.milestones.map((m) => (m.id === it.msId ? { ...m, done: !m.done } : m)) })} />
                         ) : <span className="pill shortlist">book by</span>}
                         <div className="grow">
                           <div style={{ textDecoration: it.done ? 'line-through' : undefined, color: it.done ? 'var(--muted)' : undefined }}>{it.title}</div>

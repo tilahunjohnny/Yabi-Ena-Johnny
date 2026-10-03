@@ -111,4 +111,4 @@ export const fmtDate = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDate
 export const fmtMonthYear = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
 /** A data colour (plan or category) blended toward the text colour so it stays readable in light and dark themes. */
-export const tint = (c: string) => `color-mix(in srgb, ${c} 62%, var(--text))`;
+export const tint = (c: string) => `color-mix(in srgb, ${c} var(--tint-mix, 62%), var(--text))`;
