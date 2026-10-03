@@ -6,7 +6,6 @@ import { Option, Status } from '../../shared/types';
 import { useStore } from '../store';
 import { CatIcon, Empty, PageHead, Seg, tint } from '../components/ui';
 import { CompareTable, OptionCard, OptionForm, blankOption } from '../components/options';
-import { RangeBar } from '../components/RangeBar';
 
 export default function CategoryPage() {
   const { id } = useParams();
@@ -54,13 +53,13 @@ export default function CategoryPage() {
       {line && (
         <div className="card" style={{ marginBottom: 22 }}>
           <div className="row between wrap">
-            <div><div className="eyebrow">Budget range</div><div className="small muted">Estimate uses your {podium[0]?.status === 'chosen' ? 'chosen' : '#1'} option</div></div>
+            <div><div className="eyebrow">Budget</div><div className="small muted">Estimate uses your {podium[0]?.status === 'chosen' ? 'chosen' : '#1'} option</div></div>
             <div className="row" style={{ gap: 20 }}>
               <div><div className="tiny muted">Target</div><div className="price">{money(line.target, state.settings.currency)}</div></div>
-              <div><div className="tiny muted">Estimate</div><div className="price" style={{ color: estimate > line.max ? 'var(--bad)' : undefined }}>{money(estimate, state.settings.currency)}</div></div>
+              <div><div className="tiny muted">Estimate</div><div className="price" style={{ color: estimate > line.target ? 'var(--bad)' : undefined }}>{money(estimate, state.settings.currency)}</div></div>
             </div>
           </div>
-          <RangeBar line={line} estimate={estimate} currency={state.settings.currency} />
+          <div className="progress" style={{ marginTop: 14 }} title="Your leading option compared with this category's budget"><i style={{ width: `${Math.min(100, (estimate / Math.max(1, line.target)) * 100)}%`, background: estimate > line.target ? 'var(--bad)' : undefined }} /></div>
         </div>
       )}
 

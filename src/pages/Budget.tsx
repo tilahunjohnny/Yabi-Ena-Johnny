@@ -21,14 +21,11 @@ export default function Budget() {
   const lines = visibleLines(state);
   const sum = sumTargets(state);
   const diff = total - sum; // >0 unallocated, <0 over
-  const pct = (n: number) => `${Math.min(100, Math.max(0, (n / Math.max(1, total)) * 100))}%`;
 
   const setBalanceMode = (on: boolean) => { setBalance(on); try { localStorage.setItem('yej:balance', on ? 'on' : 'off'); } catch { /* ignore */ } };
   const slide = (id: string, v: number) => update((s) => ({ ...s, budget: moveSlider(s, id, v, balance) }));
   const setTotal = (n: number) => update((s) => { const r = changeTotal(s, n, balance); return { ...s, settings: { ...s.settings, totalBudget: r.total }, budget: r.budget }; });
   const patchLine = (id: string, p: Partial<BudgetLine>) => update((s) => ({ ...s, budget: s.budget.map((b) => (b.categoryId === id ? { ...b, ...p } : b)) }));
-  const setRange = (id: string, p: { min?: number; max?: number }) =>
-    update((s) => ({ ...s, budget: s.budget.map((b) => (b.categoryId === id ? { ...b, min: Math.min(p.min ?? b.min, b.target), max: Math.max(p.max ?? b.max, b.target) } : b)) }));
 
   const autoFromOptions = () => {
     update((s) => ({
@@ -91,7 +88,7 @@ export default function Budget() {
       </div>
 
       <div className="grid g3" style={{ marginBottom: 18 }}>
-        <div className="card"><div className="tiny muted">Planned targets</div><div className="stat">{money(t.target, cur)}</div><div className="tiny muted">range {money(t.min, cur)} to {money(t.max, cur)}</div></div>
+        <div className="card"><div className="tiny muted">Planned targets</div><div className="stat">{money(t.target, cur)}</div><div className="tiny muted">across {lines.length} categories</div></div>
         <div className="card"><div className="tiny muted">Estimate from picks</div><div className="stat" style={{ color: over ? 'var(--bad)' : undefined }}>{money(t.estimate, cur)}</div><div className="tiny muted">{money(t.locked, cur)} locked in</div></div>
         <div className="card">
           <div className="tiny muted">{over ? 'Picks are over budget by' : 'Left after picks'}</div>
@@ -125,17 +122,12 @@ export default function Budget() {
               <div className="slide-wrap">
                 <input className="slider" type="range" aria-label={`${cat.name} budget`} min={0} max={sliderMax} step={STEP} value={Math.min(b.target, sliderMax)} disabled={!!b.locked}
                   style={{ ['--pct' as any]: `${barPct}%`, ['--c' as any]: tint(cat.color) }} onChange={(ev) => slide(b.categoryId, Number(ev.target.value))} />
-                <div className="band" style={{ left: pct(b.min), width: `calc(${pct(b.max)} - ${pct(b.min)})` }} title={`Acceptable range ${money(b.min, cur)} to ${money(b.max, cur)}`} />
-                {e.cost > 0 && <div className={`pick ${e.cost > b.max ? 'over' : ''}`} style={{ left: markerLeft(estPct) }} title={`Your pick: ${money(e.cost, cur)}`} />}
+                {e.cost > 0 && <div className={`pick ${e.cost > b.target ? 'over' : ''}`} style={{ left: markerLeft(estPct) }} title={`Your pick: ${money(e.cost, cur)}${e.cost > b.target ? ' (more than this budget)' : ''}`} />}
               </div>
 
-              <div className="row between wrap" style={{ gap: 10, marginTop: 6 }}>
-                <span className="tiny muted">The beige strip is your acceptable range{e.cost > 0 ? '; the dot is what your pick costs' : ''}.</span>
-                <div className="row wrap" style={{ gap: 12 }}>
-                  <label className="tiny muted row" style={{ gap: 6 }}>Exact <NumInput className="num" value={b.target} onChange={(n) => slide(b.categoryId, n)} /></label>
-                  <label className="tiny muted row" style={{ gap: 6 }}>Min <NumInput className="num" value={b.min} onChange={(n) => setRange(b.categoryId, { min: n })} /></label>
-                  <label className="tiny muted row" style={{ gap: 6 }}>Max <NumInput className="num" value={b.max} onChange={(n) => setRange(b.categoryId, { max: n })} /></label>
-                </div>
+              <div className="row between wrap" style={{ gap: 10, marginTop: 4 }}>
+                <span className="tiny muted">{e.cost > 0 ? `The dot is what your pick costs (${money(e.cost, cur)}).` : 'No pick yet for this category.'}</span>
+                <label className="tiny muted row" style={{ gap: 6 }}>Exact <NumInput className="num" value={b.target} onChange={(n) => slide(b.categoryId, n)} /></label>
               </div>
             </div>
           );
