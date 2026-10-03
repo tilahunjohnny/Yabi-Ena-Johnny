@@ -155,9 +155,15 @@ export interface RingBrief {
   description: string;
   shape: string;
   carat: string;
+  /** Stone type, e.g. lab-grown diamond. */
+  stone: string;
+  color: string;
+  clarity: string;
   metal: string;
   setting: string;
   band: string;
+  /** Other features she asked for, e.g. milgrain edges. */
+  details: string;
   ringSize: string;
   /** What he wants to spend, in the planner currency (0 = not set). */
   budget: number;

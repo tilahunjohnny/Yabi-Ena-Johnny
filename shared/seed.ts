@@ -157,7 +157,14 @@ export function seedTree(): AppState['tree'] {
   return { nodes, edges };
 }
 
-export const blankRingBrief = (): RingBrief => ({ images: [], name: '', description: '', shape: '', carat: '', metal: '', setting: '', band: '', ringSize: '', budget: 0, needBy: '', proposalDate: '' });
+export const blankRingBrief = (): RingBrief => ({ images: [], name: '', description: '', shape: '', carat: '', stone: '', color: '', clarity: '', metal: '', setting: '', band: '', details: '', ringSize: '', budget: 0, needBy: '', proposalDate: '' });
+
+/** What she has asked for so far. Filled in once, only into fields that are still empty. */
+export const HER_RING: Partial<RingBrief> = {
+  description: 'Cushion-cut lab diamond in a floral basket setting with milgrain edges.',
+  shape: 'Cushion', carat: '2.8–3 ct', stone: 'Lab-grown diamond', color: 'D–F', clarity: 'VVS1–VVS2',
+  setting: 'Floral basket', details: 'Milgrain edges',
+};
 
 export function seedState(): AppState {
   const totalBudget = 40000;
@@ -171,7 +178,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 7,
+    version: 8,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],
@@ -186,7 +193,7 @@ export function seedState(): AppState {
     checklist,
     guests: [],
     ideas: [],
-    ringBrief: blankRingBrief(),
+    ringBrief: { ...blankRingBrief(), ...HER_RING },
     ringHints: [],
     jewelers: [],
   };

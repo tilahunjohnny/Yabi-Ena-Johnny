@@ -1,6 +1,6 @@
 import { AppState, BudgetLine, Category, Guest, uid } from './types';
 import { balanceToTotal } from './budget';
-import { blankRingBrief, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
+import { blankRingBrief, HER_RING, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
 
 /** Shares the original template used for the budget, to tell untouched defaults from edits. */
 const OLD_SHARES: Record<string, number> = {
@@ -159,5 +159,11 @@ export function migrateState(input: AppState): AppState {
   if (v < 2) s = toV2(s);
   if (v < 6) s = toColors(s);
   if (v < 7) s = toV7(s);
+  if (v < 8) {
+    // Add what she has asked for, but only into fields that are still empty.
+    const brief: Record<string, unknown> = { ...s.ringBrief };
+    for (const [k, val] of Object.entries(HER_RING)) if (!brief[k]) brief[k] = val;
+    s = { ...s, version: 8, ringBrief: brief as unknown as AppState['ringBrief'] };
+  }
   return s;
 }

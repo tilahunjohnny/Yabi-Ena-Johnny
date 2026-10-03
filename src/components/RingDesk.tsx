@@ -46,7 +46,7 @@ export function RingDashboard() {
   const inquiring = jewelers.filter((j) => j.status === 'inquired' || j.status === 'quoted' || j.status === 'researching').length;
   const daysToProposal = b.proposalDate ? daysBetween(todayIso(), b.proposalDate) : null;
   void cheapest; void soonest;
-  const facts: Array<[string, string]> = ([['Shape', b.shape], ['Carat', b.carat], ['Metal', b.metal], ['Setting', b.setting], ['Band', b.band], ['Her size', b.ringSize]] as Array<[string, string]>).filter(([, v]) => v);
+  const facts: Array<[string, string]> = ([['Shape', b.shape], ['Carat', b.carat], ['Stone', b.stone], ['Color', b.color], ['Clarity', b.clarity], ['Metal', b.metal], ['Setting', b.setting], ['Band', b.band], ['Details', b.details], ['Her size', b.ringSize]] as Array<[string, string]>).filter(([, v]) => v);
 
   return (
     <div className="ring-hero">
@@ -121,9 +121,13 @@ export function HerDetails() {
         <div className="grid g2" style={{ marginTop: 12 }}>
           {text$('shape', 'Shape / cut', 'Oval, emerald, round…')}
           {text$('carat', 'Carat', '1.5–2')}
+          {text$('stone', 'Stone', 'Lab-grown diamond')}
+          {text$('color', 'Color', 'D–F')}
+          {text$('clarity', 'Clarity', 'VVS1–VVS2')}
           {text$('metal', 'Metal', '14k yellow gold')}
           {text$('setting', 'Setting', 'Solitaire, hidden halo…')}
           {text$('band', 'Band', 'Thin, pavé, plain…')}
+          {text$('details', 'Other details', 'Milgrain edges…')}
           {text$('ringSize', 'Her ring size', '6.5')}
           <Field label={`Budget (${state.settings.currency})`}><NumInput value={b.budget} onChange={(n) => patch({ budget: n })} /></Field>
           <Field label="Need the ring by" hint="Drives the “too late” warnings on Timeline"><input type="date" value={b.needBy} onChange={(e) => patch({ needBy: e.target.value })} /></Field>
