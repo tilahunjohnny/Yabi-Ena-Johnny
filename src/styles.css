@@ -6,7 +6,7 @@
   --shadow: 0 1px 2px rgba(42, 38, 25, 0.05), 0 8px 24px rgba(42, 38, 25, 0.07);
   --radius: 16px;
   --tint-mix: 62%; /* how much of a data colour survives when blended toward the text colour */
-  --serif: 'Abril Fatface', 'DM Serif Display', Georgia, serif;
+  --serif: 'Marcellus', Georgia, serif;
   --sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 :root[data-theme='dark'] {
@@ -19,7 +19,7 @@
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14.5px; line-height: 1.5; -webkit-font-smoothing: antialiased; font-synthesis: none; }
-h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0; line-height: 1.12; margin: 0; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: .01em; line-height: 1.14; margin: 0; }
 h1 { font-size: 2.3rem; line-height: 1.1; } h2 { font-size: 1.5rem; } h3 { font-size: 1.15rem; }
 a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -34,7 +34,7 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100%; }
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 22px 14px; border-right: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; gap: 4px; }
 .brand { padding: 4px 10px 18px; }
-.brand .mark { font-family: var(--serif); font-size: 1.5rem; font-weight: 400; line-height: 1; background: linear-gradient(120deg, var(--accent), var(--rose)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand .mark { font-family: var(--serif); font-size: 1.6rem; font-weight: 400; letter-spacing: .01em; line-height: 1; background: linear-gradient(120deg, var(--accent), var(--rose)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .brand .sub { font-size: 10.5px; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
 .nav-label { font-size: 11px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); padding: 16px 10px 6px; }
 .nav a { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 10px; color: var(--text); font-weight: 500; font-size: 14px; opacity: .8; }
