@@ -47,6 +47,8 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.get('/healthz', (_req, res) => res.send('ok'));
+// Photos for the sign-in screen must load before anyone is signed in.
+app.use('/welcome', express.static(path.join(root, 'welcome'), { maxAge: '7d' }));
 app.use(authMiddleware(process.env.APP_PASSWORD));
 if (!process.env.APP_PASSWORD) console.warn('WARNING: APP_PASSWORD is not set — anyone who can reach this server can edit your planner.');
 
