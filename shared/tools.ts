@@ -1,5 +1,5 @@
-import { AppState, Guest, Option, Status, TreeEdge, TreeNode, uid } from './types';
-import { moveOption } from './logic';
+import { AppState, Guest, Option, PriceTier, Status, TreeEdge, TreeNode, Weekday, uid } from './types';
+import { dayLabel, moveOption } from './logic';
 
 /** Tool schemas exposed to the Claude assistant. (fetch_url is handled by the server.) */
 export const TOOL_DEFS = [
@@ -10,7 +10,7 @@ export const TOOL_DEFS = [
   },
   {
     name: 'add_option',
-    description: 'Add a new option (venue, vendor, person, etc.) to a planning category.',
+    description: 'Add a new option (venue, vendor, etc.) to a planning category. If an option with the same name already exists in that category, use update_option instead.',
     input_schema: {
       type: 'object',
       properties: {
@@ -29,6 +29,22 @@ export const TOOL_DEFS = [
         lead_time_months: { type: 'number', description: 'Months before the wedding it must be booked' },
         availability: { type: 'string' },
         scenarios: { type: 'array', items: { type: 'string' }, description: 'Scenario names/ids this applies to; omit for all' },
+        pricing: {
+          type: 'array',
+          description: 'Use when the price differs by day of the week (and/or season). One entry per distinct price, e.g. {days:["mon","tue","wed","thu"],cost:12000}, {days:["fri"],cost:15000}, {days:["sat"],cost:21000}, {days:["sun"],cost:14000}. Replaces any existing prices.',
+          items: {
+            type: 'object',
+            properties: {
+              days: { type: 'array', items: { type: 'string', enum: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] } },
+              cost: { type: 'number', description: 'Total price for that day group' },
+              season: { type: 'string', description: 'e.g. "Peak (May–Oct)"; omit for year-round' },
+              note: { type: 'string', description: 'e.g. minimum spend, what is included' },
+            },
+            required: ['days', 'cost'],
+          },
+        },
+        headline_days: { type: 'array', items: { type: 'string', enum: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] }, description: 'Which price to treat as the main one (default: the Saturday price)' },
+        custom: { type: 'object', description: 'Extra facts as key/value text, e.g. {"Capacity":"180","Deposit":"$3,000","Hours":"6pm-11pm"}', additionalProperties: { type: 'string' } },
       },
       required: ['category', 'name'],
     },
@@ -47,6 +63,22 @@ export const TOOL_DEFS = [
         lead_time_months: { type: 'number' }, availability: { type: 'string' },
         scenarios: { type: 'array', items: { type: 'string' } },
         category: { type: 'string', description: 'Move to this category' },
+        pricing: {
+          type: 'array',
+          description: 'Use when the price differs by day of the week (and/or season). One entry per distinct price, e.g. {days:["mon","tue","wed","thu"],cost:12000}, {days:["fri"],cost:15000}, {days:["sat"],cost:21000}, {days:["sun"],cost:14000}. Replaces any existing prices.',
+          items: {
+            type: 'object',
+            properties: {
+              days: { type: 'array', items: { type: 'string', enum: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] } },
+              cost: { type: 'number', description: 'Total price for that day group' },
+              season: { type: 'string', description: 'e.g. "Peak (May–Oct)"; omit for year-round' },
+              note: { type: 'string', description: 'e.g. minimum spend, what is included' },
+            },
+            required: ['days', 'cost'],
+          },
+        },
+        headline_days: { type: 'array', items: { type: 'string', enum: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] }, description: 'Which price to treat as the main one (default: the Saturday price)' },
+        custom: { type: 'object', description: 'Extra facts as key/value text, e.g. {"Capacity":"180","Deposit":"$3,000","Hours":"6pm-11pm"}', additionalProperties: { type: 'string' } },
       },
       required: ['option'],
     },
@@ -200,6 +232,49 @@ function findScenario(state: AppState, ref: unknown) {
   const r = norm(ref);
   return state.scenarios.find((s) => s.id === ref || norm(s.name) === r) ?? state.scenarios.find((s) => norm(s.name).includes(r));
 }
+
+const DAY_ALIASES: Record<string, Weekday> = {
+  mon: 'mon', monday: 'mon', tue: 'tue', tues: 'tue', tuesday: 'tue', wed: 'wed', weds: 'wed', wednesday: 'wed',
+  thu: 'thu', thur: 'thu', thurs: 'thu', thursday: 'thu', fri: 'fri', friday: 'fri', sat: 'sat', saturday: 'sat', sun: 'sun', sunday: 'sun',
+};
+const WEEK: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+/** Accepts ["mon","tue"], "Mon-Thu", "Fri/Sat", "weekdays", "weekend"... and returns a clean list of weekdays. */
+export function parseDays(input: unknown): Weekday[] {
+  const parts = (Array.isArray(input) ? input : [input]).flatMap((x) => String(x ?? '').toLowerCase().replace(/[–—]/g, '-').split(/[,/&]|\band\b/)).map((x) => x.trim()).filter(Boolean);
+  const out = new Set<Weekday>();
+  for (const p of parts) {
+    if (/^(week ?days?|mon-fri)$/.test(p)) WEEK.slice(0, 5).forEach((d) => out.add(d));
+    else if (/^(week ?ends?|sat-sun)$/.test(p)) { out.add('sat'); out.add('sun'); }
+    else if (/^(every ?day|daily|all|any)/.test(p)) WEEK.forEach((d) => out.add(d));
+    else if (p.includes('-') && !(p in DAY_ALIASES)) {
+      const [a, b] = p.split('-').map((x) => DAY_ALIASES[x.trim()]);
+      if (a && b) { let i = WEEK.indexOf(a); for (let n = 0; n < 7; n++) { out.add(WEEK[i]); if (WEEK[i] === b) break; i = (i + 1) % 7; } }
+    } else if (DAY_ALIASES[p]) out.add(DAY_ALIASES[p]);
+  }
+  return WEEK.filter((d) => out.has(d));
+}
+
+function buildTiers(raw: unknown): PriceTier[] {
+  if (!Array.isArray(raw)) return [];
+  const tiers: PriceTier[] = [];
+  for (const r of raw as Array<Record<string, any>>) {
+    const days = parseDays(r.days);
+    const cost = Number(r.cost);
+    if (!days.length || !Number.isFinite(cost)) continue;
+    tiers.push({ id: uid('tier'), label: dayLabel(days), days, cost, season: String(r.season ?? ''), note: String(r.note ?? '') });
+  }
+  return tiers;
+}
+
+/** Pick the headline tier (default Saturday, else the first) and keep `cost` in step with it. */
+function applyHeadline<T extends { tiers: PriceTier[]; tierId: string; cost: number }>(o: T, headlineDays?: unknown): T {
+  if (!o.tiers.length) return o;
+  const want = headlineDays ? parseDays(headlineDays) : [];
+  const tier = (want.length ? o.tiers.find((t) => want.some((d) => t.days.includes(d))) : undefined) ?? o.tiers.find((t) => t.days.includes('sat')) ?? o.tiers[0];
+  return { ...o, tierId: tier.id, cost: tier.cost };
+}
+
 const clampRating = (n: unknown) => Math.max(0, Math.min(5, Number(n) || 0));
 const validStatus = (s: unknown): Status | undefined => (['idea', 'shortlist', 'chosen', 'rejected'].includes(String(s)) ? (s as Status) : undefined);
 
@@ -218,13 +293,18 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       const cat = findCategory(state, input.category);
       if (!cat) return fail(`No category matching "${input.category}". Categories: ${state.categories.filter((c) => !c.hidden).map((c) => `${c.id} (${c.name})`).join(', ')}`);
       const scenarioIds = ((input.scenarios as string[]) ?? []).map((s) => findScenario(state, s)?.id).filter(Boolean) as string[];
-      const opt: Option = {
+      const dupe = state.options.find((o) => o.categoryId === cat.id && norm(o.name) === norm(input.name));
+      if (dupe) return fail(`"${dupe.name}" already exists in ${cat.name} (id ${dupe.id}). Use update_option to change it instead of adding a duplicate.`);
+      let opt: Option = {
         id: uid('opt'), categoryId: cat.id, name: String(input.name), vendor: input.vendor ?? '', url: input.url ?? '', location: input.location ?? '', country: input.country ?? '',
         cost: Number(input.cost) || 0, rating: clampRating(input.rating), status: validStatus(input.status) ?? 'idea',
         pros: input.pros ?? '', cons: input.cons ?? '', notes: input.notes ?? '', scenarioIds, leadTimeMonths: Number(input.lead_time_months) || 0,
-        availability: input.availability ?? '', tags: [], custom: {}, createdAt: new Date().toISOString(),
+        availability: input.availability ?? '', tags: [], custom: input.custom && typeof input.custom === 'object' ? Object.fromEntries(Object.entries(input.custom).map(([k, v]) => [k, String(v)])) : {}, createdAt: new Date().toISOString(),
+        tiers: buildTiers(input.pricing), tierId: '',
       };
-      return { state: { ...state, options: [...state.options, opt] }, message: `Added option ${opt.id} "${opt.name}" to ${cat.name}.`, action: `Added "${opt.name}" to ${cat.name}` };
+      opt = applyHeadline(opt, input.headline_days);
+      const priced = opt.tiers.length ? ` with ${opt.tiers.length} day-based price${opt.tiers.length > 1 ? 's' : ''}` : '';
+      return { state: { ...state, options: [...state.options, opt] }, message: `Added option ${opt.id} "${opt.name}" to ${cat.name}${priced}.`, action: `Added "${opt.name}" to ${cat.name}${priced}` };
     }
     case 'update_option': {
       const o = findOption(state, input.option);
@@ -232,6 +312,9 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       const next: Option = { ...o };
       for (const k of ['name', 'vendor', 'url', 'location', 'country', 'pros', 'cons', 'notes', 'availability'] as const) if (input[k] !== undefined) next[k] = String(input[k]);
       if (input.cost !== undefined) next.cost = Number(input.cost) || 0;
+      if (input.custom && typeof input.custom === 'object') next.custom = { ...next.custom, ...Object.fromEntries(Object.entries(input.custom).map(([k, v]) => [k, String(v)])) };
+      if (input.pricing !== undefined) { next.tiers = buildTiers(input.pricing); next.tierId = ''; }
+      if (input.pricing !== undefined || input.headline_days !== undefined) Object.assign(next, applyHeadline(next, input.headline_days));
       if (input.rating !== undefined) next.rating = clampRating(input.rating);
       if (input.lead_time_months !== undefined) next.leadTimeMonths = Number(input.lead_time_months) || 0;
       if (validStatus(input.status)) next.status = validStatus(input.status)!;

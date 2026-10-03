@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { GitCompare, MessageSquare, Plus } from 'lucide-react';
-import { isAbroad, optionsFor, top3, money } from '../../shared/logic';
+import { costFor, isAbroad, optionsFor, top3, money } from '../../shared/logic';
 import { Option, Status } from '../../shared/types';
 import { useStore } from '../store';
 import { CatIcon, Empty, PageHead, Seg, tint } from '../components/ui';
@@ -25,10 +25,11 @@ export default function CategoryPage() {
   const line = state.budget.find((b) => b.categoryId === cat.id);
   const rankOf = (o: Option) => state.options.filter((x) => x.categoryId === cat.id).findIndex((x) => x.id === o.id) + 1;
   const home = state.settings.homeCountry;
+  const viewing = state.scenarios.find((x) => x.id === scenarioId);
   const countries = Array.from(all.reduce((m, o) => (o.country.trim() ? m.set(o.country.trim(), (m.get(o.country.trim()) ?? 0) + 1) : m), new Map<string, number>()));
   const inPlace = (o: Option) => place === 'all' || (place === 'home' && !isAbroad(o, home)) || (place === 'abroad' && isAbroad(o, home)) || (place.startsWith('c:') && o.country.trim() === place.slice(2));
   let list = all.filter((o) => (filter === 'all' || o.status === filter) && inPlace(o));
-  if (sort === 'cost') list = [...list].sort((a, b) => a.cost - b.cost);
+  if (sort === 'cost') list = [...list].sort((a, b) => costFor(a, viewing) - costFor(b, viewing));
   if (sort === 'rating') list = [...list].sort((a, b) => b.rating - a.rating);
   const chosen = selected.map((sid) => all.find((o) => o.id === sid)).filter(Boolean) as Option[];
   const toggle = (oid: string) => setSelected((s) => (s.includes(oid) ? s.filter((x) => x !== oid) : s.length >= 4 ? s : [...s, oid]));
@@ -76,7 +77,7 @@ export default function CategoryPage() {
               <div className="eyebrow" style={{ marginBottom: 6 }}>{o.status === 'chosen' ? '✓ Chosen' : i === 0 ? 'Leading' : 'Contender'}</div>
               <h3 style={{ paddingRight: 36 }}>{o.name}</h3>
               <div className="small muted">{[o.vendor, [o.location, o.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || '—'}{isAbroad(o, home) && <span className="pill abroad" style={{ marginLeft: 6 }}>✈ Abroad</span>}</div>
-              <div className="price" style={{ margin: '12px 0 4px' }}>{money(o.cost, state.settings.currency)}</div>
+              <div className="price" style={{ margin: '12px 0 4px' }}>{money(costFor(o, viewing), state.settings.currency)}{o.tiers.length > 1 && <span className="tiny muted" style={{ fontFamily: 'var(--sans)', marginLeft: 8 }}>from {money(Math.min(...o.tiers.map((t) => t.cost)), state.settings.currency)}</span>}</div>
               <div className="small" style={{ minHeight: 40 }}>{o.pros && <div><span style={{ color: 'var(--good)' }}>+</span> {o.pros}</div>}{o.cons && <div><span style={{ color: 'var(--bad)' }}>−</span> {o.cons}</div>}</div>
               <button className="btn sm" style={{ marginTop: 10 }} onClick={() => setEditing({ option: o, isNew: false })}>Open</button>
             </div>

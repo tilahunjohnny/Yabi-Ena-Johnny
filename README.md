@@ -14,7 +14,8 @@ A private wedding-planning workspace: store, compare and rank every option, trac
 | **Discussions** | A log of what you talked about and decided, tagged by category, with open/resolved. |
 | **Checklist** | ~45 prompts of "things to think about", grouped by category, plus your own. |
 | **Ring & Proposal** | Collect rings from vendors with a top choice, brainstorm/rank proposal locations, and a prep list. |
-| **Assistant (Claude)** | Chat with saved threads. Paste a link and it reads the page and adds the option; ask it to re-rank, change costs, adjust the budget, log notes, add timelines or tree branches. |
+| **Prices by day** | Any option can carry different prices for Mon–Thu, Fri, Sat and Sun (and a season). Under a plan, the price follows that plan's weekday, so moving Plan A from a Saturday to a Friday updates the venue cost and the budget estimate. |
+| **Assistant (Claude)** | Chat with saved threads. **Upload files** (PDF, Word, Excel, images, CSV) and it reads each price sheet and adds every option with its prices by day. Paste a link and it reads the page and adds the option; ask it to re-rank, change costs, adjust the budget, log notes, add timelines or tree branches. |
 | **Settings** | Names, currency, budget, guest count, category editor, JSON export/import. |
 
 Data lives in `data/db.json` on the server, so you and your partner see the same planner (it refreshes when you switch back to the tab). A copy is also cached in each browser, so it still works if the server is down.

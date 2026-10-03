@@ -48,7 +48,7 @@ let current = load();
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '45mb' })); // chat messages can carry attached files (base64)
 app.use(express.urlencoded({ extended: false }));
 app.get('/healthz', (_req, res) => res.send('ok'));
 // Logging out must work from any state, so it sits before the auth gate. It only clears this browser's cookies.
@@ -92,13 +92,16 @@ app.post('/api/chat', async (req, res) => {
     // The client's state is authoritative (it may hold edits not yet synced).
     const unlocked = ringUnlocked(req);
     if (req.body.state) current = mergeSecrets(req.body.state as AppState, current, unlocked);
-    const { reply, state, actions } = await runChat(unlocked ? current : stripSecrets(current), messages, unlocked);
+    const attachments = (Array.isArray(req.body.attachments) ? req.body.attachments : []).filter((a: any) => a && typeof a.name === 'string' && typeof a.data === 'string').map((a: any) => ({ name: a.name.slice(0, 200), mediaType: String(a.mediaType ?? ''), data: a.data }));
+    const { reply, state, actions } = await runChat(unlocked ? current : stripSecrets(current), messages, unlocked, attachments);
     current = mergeSecrets(state, current, unlocked);
     save(current);
     res.json({ reply, actions, state: unlocked ? current : stripSecrets(current), rev });
   } catch (e: any) {
     console.error(e);
-    res.status(500).json({ error: e?.message || 'Chat failed' });
+    // Problems with an uploaded file are the user's to fix, so say so plainly.
+    const fileProblem = /can't be read|larger than/.test(String(e?.message));
+    res.status(fileProblem ? 400 : 500).json({ error: e?.message || 'Chat failed' });
   }
 });
 

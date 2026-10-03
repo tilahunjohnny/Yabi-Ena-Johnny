@@ -11,6 +11,18 @@ export interface Category {
   hidden?: boolean;
 }
 
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+/** A price that applies on certain days of the week (e.g. Mon–Thu $12,000, Sat $21,000). */
+export interface PriceTier {
+  id: string;
+  label: string; // e.g. "Mon–Thu"
+  days: Weekday[];
+  cost: number;
+  season: string; // free text, e.g. "Peak (May–Oct)"; blank = year-round
+  note: string;
+}
+
 export interface Option {
   id: string;
   categoryId: string;
@@ -20,7 +32,12 @@ export interface Option {
   location: string;
   /** Country the option is in (blank = unspecified). Compared with Settings.homeCountry to flag out-of-country options. */
   country: string;
+  /** Headline cost: the selected price tier's cost when there are tiers. */
   cost: number;
+  /** Prices that differ by day of the week. */
+  tiers: PriceTier[];
+  /** Which tier is the headline price ('' = none selected / plain cost). */
+  tierId: string;
   rating: number; // 0-5
   status: Status;
   pros: string;
@@ -87,6 +104,8 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  /** Names of files attached to a user message (the file contents themselves are not stored). */
+  attachments?: Array<{ name: string; size: number }>;
   actions?: string[];
   createdAt: string;
 }

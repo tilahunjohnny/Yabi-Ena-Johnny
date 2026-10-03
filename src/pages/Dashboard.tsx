@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Gem, MapPin, MessageSquare, Sparkles, Users } from 'lucide-react';
-import { guestCounts, isAbroad, money, monthsBetween, today, top3, totals } from '../../shared/logic';
+import { costFor, guestCounts, isAbroad, money, monthsBetween, today, top3, totals } from '../../shared/logic';
 import { useStore } from '../store';
 import { fmtDate, Stars, tint } from '../components/ui';
 
@@ -43,7 +43,7 @@ export default function Dashboard() {
                 <Link to="/c/venue" style={{ color: 'inherit', textDecoration: 'none' }}>
                   <div className="serif" style={{ fontSize: '1.25rem', fontWeight: 600 }}>{lead.name}</div>
                   <div className="row between small" style={{ marginTop: 2 }}>
-                    <span className="row" style={{ gap: 6 }}>{money(lead.cost, cur)}{lead.country && <span className="muted row" style={{ gap: 3 }}><MapPin size={12} />{isAbroad(lead, state.settings.homeCountry) ? `${lead.country} · abroad` : lead.country}</span>}</span>
+                    <span className="row" style={{ gap: 6 }}>{money(costFor(lead, s), cur)}{lead.country && <span className="muted row" style={{ gap: 3 }}><MapPin size={12} />{isAbroad(lead, state.settings.homeCountry) ? `${lead.country} · abroad` : lead.country}</span>}</span>
                     <Stars value={lead.rating} size={12} />
                   </div>
                 </Link>

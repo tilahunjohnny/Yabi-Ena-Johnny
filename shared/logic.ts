@@ -1,4 +1,4 @@
-import { AppState, Category, Option, Scenario } from './types';
+import { AppState, Category, Option, PriceTier, Scenario, Weekday } from './types';
 
 /** Options for a category, in rank order, optionally filtered to a scenario. */
 export function optionsFor(state: AppState, categoryId: string, scenarioId: string = 'all'): Option[] {
@@ -21,10 +21,50 @@ export function top3(state: AppState, categoryId: string, scenarioId: string = '
 }
 
 /** Estimated cost for a category: the chosen option, else the #1 ranked live option. */
+export const WEEKDAYS: Array<{ id: Weekday; short: string; long: string }> = [
+  { id: 'mon', short: 'Mon', long: 'Monday' }, { id: 'tue', short: 'Tue', long: 'Tuesday' }, { id: 'wed', short: 'Wed', long: 'Wednesday' },
+  { id: 'thu', short: 'Thu', long: 'Thursday' }, { id: 'fri', short: 'Fri', long: 'Friday' }, { id: 'sat', short: 'Sat', long: 'Saturday' }, { id: 'sun', short: 'Sun', long: 'Sunday' },
+];
+const ORDER = WEEKDAYS.map((d) => d.id);
+
+export function weekdayOf(iso: string): Weekday {
+  const d = new Date(iso + 'T12:00:00').getDay(); // 0 = Sunday
+  return ORDER[(d + 6) % 7];
+}
+
+/** "Mon–Thu", "Fri", "Sat–Sun", "Mon, Wed, Sat": a readable label for a set of days. */
+export function dayLabel(days: Weekday[]): string {
+  const idx = ORDER.map((d, i) => (days.includes(d) ? i : -1)).filter((i) => i >= 0);
+  if (!idx.length) return 'Any day';
+  if (idx.length === 7) return 'Every day';
+  const runs: number[][] = [];
+  for (const i of idx) { const last = runs[runs.length - 1]; if (last && i === last[last.length - 1] + 1) last.push(i); else runs.push([i]); }
+  return runs.map((r) => (r.length === 1 ? WEEKDAYS[r[0]].short : r.length === 2 ? `${WEEKDAYS[r[0]].short}, ${WEEKDAYS[r[1]].short}` : `${WEEKDAYS[r[0]].short}–${WEEKDAYS[r[r.length - 1]].short}`)).join(', ');
+}
+
+/** The price tier that covers a given date's weekday (first match). */
+export function tierForDate(o: Pick<Option, 'tiers'>, iso: string): PriceTier | undefined {
+  const day = weekdayOf(iso);
+  return o.tiers.find((t) => t.days.includes(day));
+}
+
+/** What this option costs: under a plan it follows that plan's weekday, otherwise the headline cost. */
+export function costFor(o: Option, scenario?: Scenario): number {
+  if (scenario && o.tiers.length) return tierForDate(o, scenario.date)?.cost ?? o.cost;
+  return o.cost;
+}
+
+/** The tier to highlight: the plan's weekday tier, or the headline tier. */
+export function activeTier(o: Option, scenario?: Scenario): PriceTier | undefined {
+  if (scenario && o.tiers.length) return tierForDate(o, scenario.date);
+  return o.tiers.find((t) => t.id === o.tierId);
+}
+
 export function estimateFor(state: AppState, categoryId: string, scenarioId: string = 'all') {
   const t = top3(state, categoryId, scenarioId);
   const pick = t[0];
-  return { cost: pick?.cost ?? 0, option: pick, locked: pick?.status === 'chosen' };
+  const scenario = scenarioId === 'all' ? undefined : state.scenarios.find((s) => s.id === scenarioId);
+  return { cost: pick ? costFor(pick, scenario) : 0, option: pick, locked: pick?.status === 'chosen' };
 }
 
 export function totals(state: AppState, scenarioId: string = 'all') {

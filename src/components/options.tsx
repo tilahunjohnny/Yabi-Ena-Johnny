@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Pencil, Plus, Trash2, Clock, MapPin, Check } from 'lucide-react';
-import { Category, Option, Status, uid } from '../../shared/types';
-import { isAbroad, moveOption, money } from '../../shared/logic';
+import { Category, Option, PriceTier, Status, Weekday, uid } from '../../shared/types';
+import { activeTier, costFor, dayLabel, isAbroad, moveOption, money, WEEKDAYS } from '../../shared/logic';
 import { useStore } from '../store';
 import { Field, Modal, NumInput, Stars, StatusPill, STATUSES, STATUS_LABEL, tint } from './ui';
 
@@ -9,9 +9,59 @@ export const COUNTRIES = ['United States', 'Canada', 'Mexico', 'Dominican Republ
 
 export function blankOption(categoryId: string, scenarioIds: string[] = []): Option {
   return {
-    id: uid('opt'), categoryId, name: '', vendor: '', url: '', location: '', country: '', cost: 0, rating: 0, status: 'idea', pros: '', cons: '', notes: '', scenarioIds,
+    id: uid('opt'), categoryId, name: '', vendor: '', url: '', location: '', country: '', cost: 0, tiers: [], tierId: '', rating: 0, status: 'idea', pros: '', cons: '', notes: '', scenarioIds,
     leadTimeMonths: 0, availability: '', tags: [], custom: {}, createdAt: new Date().toISOString(),
   };
+}
+
+
+/** After any change to the prices, pick the headline tier (selected, else Saturday, else first) and keep `cost` in step with it. */
+function settle(o: Option): Option {
+  if (!o.tiers.length) return { ...o, tierId: '' };
+  const tier = o.tiers.find((t) => t.id === o.tierId) ?? o.tiers.find((t) => t.days.includes('sat')) ?? o.tiers[0];
+  return { ...o, tierId: tier.id, cost: tier.cost };
+}
+
+const PRESETS: Array<{ days: Weekday[] }> = [{ days: ['mon', 'tue', 'wed', 'thu'] }, { days: ['fri'] }, { days: ['sat'] }, { days: ['sun'] }];
+
+function PriceEditor({ o, change }: { o: Option; change: (next: Option) => void }) {
+  const cur = useStore().state.settings.currency;
+  const setTiers = (tiers: PriceTier[], tierId = o.tierId) => change(settle({ ...o, tiers, tierId }));
+  const add = (days: Weekday[]) => setTiers([...o.tiers, { id: uid('tier'), label: dayLabel(days), days, cost: o.cost || 0, season: '', note: '' }]);
+  const patch = (id: string, p: Partial<PriceTier>) => setTiers(o.tiers.map((t) => (t.id === id ? { ...t, ...p, label: p.days ? dayLabel(p.days) : t.label } : t)));
+  const has = (days: Weekday[]) => o.tiers.some((t) => t.days.length === days.length && days.every((d) => t.days.includes(d)));
+
+  return (
+    <div className="card flat" style={{ marginTop: 14, padding: 14 }}>
+      <div className="row between wrap" style={{ gap: 8 }}>
+        <div>
+          <strong>Pricing by day</strong>
+          <div className="tiny muted">Many venues charge differently on weekdays, Fridays, Saturdays and Sundays. Add a price for each.</div>
+        </div>
+        <div className="row wrap" style={{ gap: 6 }}>
+          {PRESETS.map((p) => <button key={p.days.join()} type="button" className="btn sm" disabled={has(p.days)} onClick={() => add(p.days)}><Plus size={12} /> {dayLabel(p.days)}</button>)}
+          <button type="button" className="btn sm" onClick={() => add(['sat'])}><Plus size={12} /> Other</button>
+        </div>
+      </div>
+      {o.tiers.map((t) => (
+        <div key={t.id} className="tier-row">
+          <div className="days" role="group" aria-label="Days this price applies to">
+            {WEEKDAYS.map((d) => {
+              const on = t.days.includes(d.id);
+              return <button key={d.id} type="button" title={d.long} className={on ? 'on' : ''} onClick={() => patch(t.id, { days: on ? t.days.filter((x) => x !== d.id) : [...t.days, d.id] })}>{d.short[0]}{d.id === 'tue' || d.id === 'thu' ? d.short[1] : d.id === 'sun' ? 'u' : ''}</button>;
+            })}
+          </div>
+          <NumInput className="num" value={t.cost} onChange={(n) => patch(t.id, { cost: n })} prefix={cur === 'USD' ? '$' : ''} />
+          <input placeholder="Season (optional)" value={t.season} onChange={(e) => patch(t.id, { season: e.target.value })} style={{ maxWidth: 170 }} aria-label="Season" />
+          <label className="tiny muted row" style={{ gap: 5, whiteSpace: 'nowrap' }} title="The price shown on the card and used in the budget when no plan is selected">
+            <input type="radio" name="headline" checked={o.tierId === t.id} onChange={() => setTiers(o.tiers, t.id)} style={{ width: 'auto', padding: 0 }} /> Main price
+          </label>
+          <button type="button" className="btn ghost sm icon danger" aria-label="Remove price" onClick={() => setTiers(o.tiers.filter((x) => x.id !== t.id), o.tierId === t.id ? '' : o.tierId)}><Trash2 size={14} /></button>
+        </div>
+      ))}
+      {o.tiers.length > 0 && <div className="tiny muted" style={{ marginTop: 8 }}>Under a plan (A, B or C), the price follows that plan’s weekday automatically.</div>}
+    </div>
+  );
 }
 
 export function OptionForm({ initial, category, isNew, onClose }: { initial: Option; category: Category; isNew: boolean; onClose: () => void }) {
@@ -25,7 +75,7 @@ export function OptionForm({ initial, category, isNew, onClose }: { initial: Opt
     if (!o.name.trim()) return;
     const custom: Record<string, string> = {};
     customRows.forEach(([k, v]) => k.trim() && (custom[k.trim()] = v));
-    const final = { ...o, name: o.name.trim(), custom };
+    const final = settle({ ...o, name: o.name.trim(), custom });
     update((s) => ({ ...s, options: isNew ? [...s.options, final] : s.options.map((x) => (x.id === final.id ? final : x)) }));
     toast(isNew ? 'Added' : 'Saved');
     onClose();
@@ -46,13 +96,15 @@ export function OptionForm({ initial, category, isNew, onClose }: { initial: Opt
           <input list="countries" value={o.country} onChange={(e) => set('country', e.target.value)} placeholder={state.settings.homeCountry} />
           <datalist id="countries">{Array.from(new Set([state.settings.homeCountry, ...COUNTRIES])).map((c) => <option key={c} value={c} />)}</datalist>
         </Field>
-        <Field label={`Estimated cost (${state.settings.currency})`}><NumInput value={o.cost} onChange={(n) => set('cost', n)} /></Field>
+        <Field label={`Estimated cost (${state.settings.currency})`} hint={o.tiers.length ? 'Follows the main price below.' : undefined}>{o.tiers.length ? <input value={money(o.cost, state.settings.currency)} disabled aria-label="Estimated cost" /> : <NumInput value={o.cost} onChange={(n) => set('cost', n)} />}</Field>
         <Field label="Book how many months before?" hint="Drives the “book by” date on each timeline."><NumInput value={o.leadTimeMonths} onChange={(n) => set('leadTimeMonths', n)} /></Field>
         <Field label="Availability / timing note"><input value={o.availability} onChange={(e) => set('availability', e.target.value)} placeholder="e.g. Open after June 2027" /></Field>
         <div>
           <Field label="Rating"><div><Stars value={o.rating} onChange={(n) => set('rating', n)} size={22} /></div></Field>
         </div>
       </div>
+
+      <PriceEditor o={o} change={setO} />
 
       <div style={{ marginTop: 14 }}>
         <Field label="Status">
@@ -98,7 +150,10 @@ export function OptionForm({ initial, category, isNew, onClose }: { initial: Opt
 export function OptionCard({
   option, rank, compact, selected, onSelect, onEdit,
 }: { option: Option; rank: number; compact?: boolean; selected?: boolean; onSelect?: () => void; onEdit: () => void }) {
-  const { state, update, toast } = useStore();
+  const { state, update, toast, scenarioId } = useStore();
+  const viewing = state.scenarios.find((x) => x.id === scenarioId);
+  const price = costFor(option, viewing);
+  const tierNow = activeTier(option, viewing);
   const scs = option.scenarioIds.map((id) => state.scenarios.find((s) => s.id === id)).filter(Boolean);
   const setStatus = (status: Status) => update((s) => ({ ...s, options: s.options.map((x) => (x.id === option.id ? { ...x, status } : x)) }));
   const move = (d: -1 | 1 | 'top') => update((s) => ({ ...s, options: moveOption(s.options, option.id, d) }));
@@ -131,9 +186,20 @@ export function OptionCard({
           </div>
         )}
         {!compact && option.availability && <div className="tiny muted" style={{ marginTop: 6 }}>🗓 {option.availability}</div>}
+        {!compact && option.tiers.length > 0 && (
+          <div className="row wrap" style={{ gap: 6, marginTop: 8 }} aria-label="Prices by day">
+            {option.tiers.map((t) => (
+              <button key={t.id} type="button" className={`tierchip ${tierNow?.id === t.id ? 'on' : ''}`} title={`${t.label}${t.season ? ` · ${t.season}` : ''}${t.note ? ` · ${t.note}` : ''}. Click to make this the main price.`}
+                onClick={() => update((st) => ({ ...st, options: st.options.map((x) => (x.id === option.id ? { ...x, tierId: t.id, cost: t.cost } : x)) }))}>
+                <span>{t.label}</span> <b>{money(t.cost, state.settings.currency)}</b>{t.season && <i> · {t.season}</i>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="side col" style={{ alignItems: 'flex-end', gap: 6 }}>
-        <div className="price">{money(option.cost, state.settings.currency)}</div>
+        <div className="price">{money(price, state.settings.currency)}</div>
+        {tierNow && option.tiers.length > 1 && <div className="tiny muted" style={{ marginTop: -4 }}>{viewing ? `${viewing.name.split(' — ')[0]} · ${tierNow.label}` : `${tierNow.label} price`}</div>}
         <Stars value={option.rating} onChange={(n) => update((s) => ({ ...s, options: s.options.map((x) => (x.id === option.id ? { ...x, rating: n } : x)) }))} size={14} />
         <div className="row" style={{ gap: 2 }}>
           {onSelect && <button className="btn sm icon" title="Select to compare" onClick={onSelect} style={selected ? { background: 'var(--accent)', color: 'var(--accent-ink)' } : undefined}><Check size={14} /></button>}
@@ -152,10 +218,11 @@ export function OptionCard({
 }
 
 export function CompareTable({ options }: { options: Option[] }) {
-  const { state } = useStore();
+  const { state, scenarioId } = useStore();
+  const viewing = state.scenarios.find((x) => x.id === scenarioId);
   const cur = state.settings.currency;
   const customKeys = Array.from(new Set(options.flatMap((o) => Object.keys(o.custom))));
-  const costs = options.map((o) => o.cost).filter((c) => c > 0);
+  const costs = options.map((o) => costFor(o, viewing)).filter((c) => c > 0);
   const bestCost = costs.length ? Math.min(...costs) : -1;
   const bestRating = Math.max(...options.map((o) => o.rating));
   const Row = ({ label, cell }: { label: string; cell: (o: Option) => React.ReactNode }) => (
@@ -166,7 +233,8 @@ export function CompareTable({ options }: { options: Option[] }) {
       <table>
         <thead><tr><th></th>{options.map((o) => <td key={o.id}><strong className="serif" style={{ fontSize: 17 }}>{o.name}</strong><div className="tiny muted">{o.vendor}</div></td>)}</tr></thead>
         <tbody>
-          <tr><th>Cost</th>{options.map((o) => <td key={o.id} className={o.cost > 0 && o.cost === bestCost ? 'best' : ''}>{money(o.cost, cur)}{o.cost > 0 && o.cost === bestCost && options.length > 1 ? ' · lowest' : ''}</td>)}</tr>
+          <tr><th>{viewing ? `Cost (${viewing.name.split(' — ')[0]})` : 'Cost'}</th>{options.map((o) => { const c = costFor(o, viewing); return <td key={o.id} className={c > 0 && c === bestCost ? 'best' : ''}>{money(c, cur)}{c > 0 && c === bestCost && options.length > 1 ? ' · lowest' : ''}</td>; })}</tr>
+          <Row label="Prices by day" cell={(o) => (o.tiers.length ? <div>{o.tiers.map((t) => <div key={t.id}>{t.label}: <strong>{money(t.cost, cur)}</strong>{t.season ? <span className="muted"> · {t.season}</span> : null}</div>)}</div> : '—')} />
           <tr><th>Rating</th>{options.map((o) => <td key={o.id} className={o.rating > 0 && o.rating === bestRating ? 'best' : ''}><Stars value={o.rating} size={14} /></td>)}</tr>
           <Row label="Status" cell={(o) => <StatusPill status={o.status} />} />
           <Row label="Location" cell={(o) => [o.location, o.country].filter(Boolean).join(', ') || '—'} />

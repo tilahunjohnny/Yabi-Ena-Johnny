@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageSquarePlus, Send, Sparkles, Trash2 } from 'lucide-react';
+import { FileText, MessageSquarePlus, Paperclip, Send, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import { AppState, Chat, ChatMessage, uid } from '../../shared/types';
 import { useStore } from '../store';
 import { PageHead } from '../components/ui';
+import { visibleCategories } from '../../shared/logic';
+import { ACCEPT, fileToBase64, fmtSize, screenFiles } from '../lib/attach';
 
 const SUGGESTIONS = [
   'Add this venue: https://… and rank it against the others',
+  'Read my attached price sheet and add each venue with its prices by day',
   'Compare my top 3 venues — which is best value for 120 guests?',
   'Add Meron to Yabi’s side of the guest list as a maybe',
   'Which of my venues are out of the country, and what’s the cheapest one abroad?',
@@ -19,6 +22,11 @@ export default function Assistant() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState<{ configured: boolean; model: string } | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const [target, setTarget] = useState('venue'); // which category files should be added to ('auto' lets Claude decide)
+  const fileInput = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const chat = state.chats.find((c) => c.id === activeId);
 
@@ -36,8 +44,20 @@ export default function Assistant() {
     chats: s.chats.map((c) => (c.id === chatId ? { ...c, title: title ?? c.title, messages: [...c.messages, m], updatedAt: m.createdAt } : c)),
   });
 
+  const addFiles = (list: FileList | File[]) => {
+    const { keep, error: err } = screenFiles(files, Array.from(list));
+    setFileError(err);
+    if (keep.length) setFiles((f) => [...f, ...keep]);
+  };
+
   const send = async (content: string) => {
-    const msg = content.trim();
+    const attached = files;
+    const catName = state.categories.find((c) => c.id === target)?.name;
+    let msg = content.trim();
+    if (!msg && attached.length) msg = target === 'auto'
+      ? 'Please read the attached file(s) and add every option you find to the planner, with prices by day of the week where they differ.'
+      : `Please read the attached file(s) and add every option you find to ${catName}, with prices by day of the week where they differ.`;
+    else if (msg && attached.length && target !== 'auto') msg += ` (Add anything from the attached files to ${catName}.)`;
     if (!msg || busy) return;
     setError('');
     let id = chat?.id;
@@ -48,17 +68,20 @@ export default function Assistant() {
       id = c.id;
       setActiveId(id);
     }
-    const userMsg: ChatMessage = { id: uid('m'), role: 'user', content: msg, createdAt: new Date().toISOString() };
+    const userMsg: ChatMessage = { id: uid('m'), role: 'user', content: msg, createdAt: new Date().toISOString(), ...(attached.length ? { attachments: attached.map((f) => ({ name: f.name, size: f.size })) } : {}) };
     const isFirst = (base.chats.find((c) => c.id === id)?.messages.length ?? 0) === 0;
     const next = withMessage(base, id, userMsg, isFirst ? msg.slice(0, 42) : undefined);
     update(() => next);
     setText('');
+    setFiles([]);
+    setFileError('');
     setBusy(true);
     try {
+      const attachments = await Promise.all(attached.map(async (f) => ({ name: f.name, mediaType: f.type, data: await fileToBase64(f) })));
       const history = next.chats.find((c) => c.id === id)!.messages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: history, state: next }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Request failed');
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: history, state: next, attachments }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || (res.status === 413 ? 'Those files are too large to send.' : 'Request failed'));
       const reply: ChatMessage = { id: uid('m'), role: 'assistant', content: data.reply, actions: data.actions, createdAt: new Date().toISOString() };
       update(() => withMessage(data.state as AppState, id!, reply));
     } catch (e: any) {
@@ -83,7 +106,41 @@ export default function Assistant() {
           {state.chats.length === 0 && <div className="tiny muted">Conversations are saved here so you can revisit them.</div>}
         </div>
 
-        <div className="card chat">
+        <div className="col" style={{ gap: 14, minWidth: 0 }}>
+        <div className={`card dropzone ${dragging ? 'drag' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}>
+          <div className="row between wrap" style={{ gap: 12 }}>
+            <div className="row" style={{ gap: 12 }}>
+              <span className="dz-icon"><Upload size={20} /></span>
+              <div>
+                <strong>Upload files</strong>
+                <div className="small muted">Drop price sheets, brochures or screenshots here. Claude reads them and adds each option with its prices (including different prices for Mon–Thu, Fri, Sat and Sun).</div>
+              </div>
+            </div>
+            <div className="row wrap" style={{ gap: 8 }}>
+              <label className="small muted row" style={{ gap: 6 }}>Add to
+                <select value={target} onChange={(e) => setTarget(e.target.value)} style={{ width: 'auto', padding: '6px 10px' }} aria-label="Add to category">
+                  <option value="auto">Let Claude decide</option>
+                  {visibleCategories(state).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+              <button className="btn" onClick={() => fileInput.current?.click()}><Paperclip size={15} /> Choose files</button>
+              <input ref={fileInput} type="file" multiple accept={ACCEPT} hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
+            </div>
+          </div>
+          <div className="tiny muted" style={{ marginTop: 8 }}>PDF · Word (.docx) · Excel (.xlsx) · images (PNG, JPG, WebP) · CSV · text. Up to 15 MB each.</div>
+          {files.length > 0 && (
+            <div className="row wrap" style={{ gap: 8, marginTop: 12 }}>
+              {files.map((f, i) => (
+                <span key={f.name + i} className="filechip"><FileText size={13} />{f.name}<span className="muted"> · {fmtSize(f.size)}</span>
+                  <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((l) => l.filter((_, j) => j !== i))}><X size={12} /></button></span>
+              ))}
+              <button className="btn primary sm" disabled={busy} onClick={() => send(text)}><Sparkles size={13} /> Read {files.length === 1 ? 'file' : `${files.length} files`} &amp; add options</button>
+            </div>
+          )}
+          {fileError && <div className="small" style={{ color: 'var(--bad)', marginTop: 10 }}>{fileError}</div>}
+        </div>
+
+        <div className="card chat" style={{ height: 'calc(100vh - 330px)', minHeight: 440 }}>
           {status && !status.configured && (
             <div className="small" style={{ padding: '10px 14px', borderRadius: 12, background: 'color-mix(in srgb, var(--warn) 14%, transparent)', marginBottom: 12 }}>
               <strong>Assistant not connected yet.</strong> Add <code>ANTHROPIC_API_KEY</code> to a <code>.env</code> file next to <code>package.json</code> and restart the server.
@@ -101,6 +158,7 @@ export default function Assistant() {
             ) : (
               chat.messages.map((m) => (
                 <div key={m.id} className={`msg ${m.role}`}>
+                  {m.attachments && m.attachments.length > 0 && <div className="row wrap" style={{ gap: 6, marginBottom: 8 }}>{m.attachments.map((a, i) => <span key={i} className="filechip on-dark"><FileText size={12} />{a.name}</span>)}</div>}
                   {m.content}
                   {m.actions && m.actions.length > 0 && <div className="actions">{m.actions.map((a, i) => <span key={i} className="pill">✓ {a}</span>)}</div>}
                 </div>
@@ -110,9 +168,11 @@ export default function Assistant() {
             {error && <div className="small" style={{ color: 'var(--bad)' }}>{error}</div>}
           </div>
           <form className="composer" onSubmit={(e) => { e.preventDefault(); send(text); }}>
-            <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste a link or ask anything…  (Enter to send, Shift+Enter for a new line)" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(text); } }} rows={1} />
-            <button className="btn primary" type="submit" disabled={busy || !text.trim()}><Send size={15} /> Send</button>
+            <button type="button" className="btn icon" title="Attach files" aria-label="Attach files" onClick={() => fileInput.current?.click()}><Paperclip size={16} /></button>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste a link, attach a price sheet, or ask anything…  (Enter to send)" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(text); } }} rows={1} />
+            <button className="btn primary" type="submit" disabled={busy || (!text.trim() && !files.length)}><Send size={15} /> Send</button>
           </form>
+        </div>
         </div>
       </div>
     </div>

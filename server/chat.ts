@@ -3,6 +3,7 @@ import { AppState } from '../shared/types';
 import { TOOL_DEFS, applyTool } from '../shared/tools';
 import { guestCounts, totals } from '../shared/logic';
 import { fetchUrlText } from './fetchUrl';
+import { Attachment, attachmentBlocks } from './attachments';
 
 function summarize(state: AppState): string {
   const t = totals(state);
@@ -44,6 +45,9 @@ Rules:
 - You can read the planner's current data (below) and change it with tools. When the user pastes a link, call fetch_url first, extract the facts (name, location, price, capacity, lead time), then call add_option (or add_ring / add_proposal_idea) with those facts. Never invent prices: if a price is not on the page, leave cost at 0 and say so.
 - Make the changes the user asks for, then confirm briefly what you did. Ask a question only if something essential is missing.
 - Prefer status "rejected" over delete_option unless asked to delete.
+- When the user attaches files (price sheets, brochures, PDFs, screenshots, spreadsheets, documents), read them carefully and add every venue / vendor / option you find to the right category with add_option (several calls in one turn is fine). Use only numbers that are in the files; never guess a price. If the same venue appears in more than one file or page, merge it into ONE option, and if it already exists in the planner use update_option.
+- Prices that differ by day of the week or season go in "pricing", one entry per distinct price (for example Mon–Thu, Fri, Sat, Sun). Put minimum spend, service charge, tax, deposit, capacity, hours and what is included in "notes" or "custom". If a price is per person, multiply by the planner's guest_count only when you say so in "notes".
+- After adding from a file, finish with a short summary: each option with its prices by day, plus anything unclear, missing or worth asking the venue.
 - Timelines can differ per scenario. If an option only works for an earlier or later date, attach it to that scenario (scenarios field) and mention lead times.
 - Costs are in the planner's currency. Be warm, concise and practical. Offer a short opinion when asked to compare, using the numbers.
 
@@ -52,12 +56,18 @@ Current planner data (JSON):
 
 const RING_TOOLS = new Set(['add_ring', 'update_ring', 'add_proposal_idea']);
 
-export async function runChat(initial: AppState, history: Array<{ role: 'user' | 'assistant'; content: string }>, ringUnlocked = false) {
+export async function runChat(initial: AppState, history: Array<{ role: 'user' | 'assistant'; content: string }>, ringUnlocked = false, attachments: Attachment[] = []) {
   const client = new Anthropic();
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
   let state = initial;
   const actions: string[] = [];
   const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }));
+  if (attachments.length) {
+    // The files travel with the newest user message only; they stay unchanged through the whole tool loop.
+    const last = messages[messages.length - 1];
+    const text = typeof last.content === 'string' ? last.content : '';
+    last.content = [...(await attachmentBlocks(attachments)), { type: 'text', text: text || 'Please read the attached file(s) and add what you find to the planner.' }];
+  }
   let reply = '';
 
   // Built ONCE per request and reused verbatim on every step of the tool loop. The model's reasoning blocks are
