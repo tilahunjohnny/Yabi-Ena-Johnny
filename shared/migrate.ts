@@ -1,4 +1,5 @@
-import { AppState, Category, Guest, uid } from './types';
+import { AppState, BudgetLine, Category, Guest, uid } from './types';
+import { balanceToTotal } from './budget';
 import { CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
 
 /** Shares the original template used for the budget, to tell untouched defaults from edits. */
@@ -10,6 +11,47 @@ const defaultLine = (total: number, share: number) => {
   const target = Math.round((total * share) / 100) * 100;
   return { min: Math.round((target * 0.7) / 100) * 100, target, max: Math.round((target * 1.35) / 100) * 100 };
 };
+
+/** Names the seeded categories had before they were renamed (a name you changed yourself is left alone). */
+const OLD_NAMES: Record<string, string[]> = {
+  catering: ['Catering & Bar'], decor: ['Florals & Decor'], lodging: ['Guest Lodging & Travel'], planner: ['Planner & Misc'], venue: ['Wedding Venues & Locations'],
+};
+const SHOW_NOW = ['catering', 'attire', 'photo', 'music', 'decor', 'lodging'];
+
+/** Version 7: Food & Drink, Attire, Photo, Music, Flowers & Décor and Transportation/Lodging join the budget. */
+function toV7(s: AppState): AppState {
+  const seed = new Map(CATEGORY_SEED.map((c) => [c.id, c]));
+  const order = CATEGORY_SEED.map((c) => c.id);
+  const known = s.categories.filter((c) => seed.has(c.id)).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  const custom = s.categories.filter((c) => !seed.has(c.id));
+  const categories: Category[] = [...known, ...custom].map((c) => {
+    const sd = seed.get(c.id);
+    if (!sd) return c;
+    const untouchedName = c.name === sd.name || (OLD_NAMES[c.id] ?? []).includes(c.name);
+    return { ...c, name: untouchedName ? sd.name : c.name, description: untouchedName ? sd.description : c.description, color: sd.color, icon: c.icon || sd.icon, hidden: SHOW_NOW.includes(c.id) ? false : c.hidden };
+  });
+
+  // Budget: an untouched v2 split is replaced by the new default split; an edited one is kept and the new
+  // categories are added alongside, with everything then balanced back to the total (locked lines stay put).
+  const total = s.settings.totalBudget;
+  const share = new Map(CATEGORY_SEED.map((c) => [c.id, c.share]));
+  const v2Share: Record<string, number> = { venue: 0.7, honeymoon: 0.15, planner: 0.1 };
+  const line = (id: string) => s.budget.find((b) => b.categoryId === id);
+  const untouched = Object.entries(v2Share).every(([id, sh]) => { const l = line(id); const d = defaultLine(total, sh); return !!l && l.min === d.min && l.target === d.target && l.max === d.max && !l.locked; });
+  const fresh = (id: string): BudgetLine => ({ categoryId: id, ...defaultLine(total, share.get(id) ?? 0) });
+  let budget: BudgetLine[];
+  if (untouched) {
+    budget = categories.map((c) => ({ ...(line(c.id) ?? {}), ...fresh(c.id) }));
+  } else {
+    budget = categories.map((c) => {
+      const l = line(c.id);
+      return l && !(SHOW_NOW.includes(c.id) && l.target === 0) ? l : { ...(l ?? {}), ...fresh(c.id) };
+    });
+  }
+  let next: AppState = { ...s, version: 7, categories, budget };
+  if (!untouched) next = { ...next, budget: balanceToTotal(next) };
+  return next;
+}
 
 /**
  * Brings any saved planner up to the current shape. Safe to run repeatedly: the version-2 changes
@@ -112,5 +154,6 @@ export function migrateState(input: AppState): AppState {
   const v = input.version ?? 1;
   if (v < 2) s = toV2(s);
   if (v < 6) s = toColors(s);
+  if (v < 7) s = toV7(s);
   return s;
 }

@@ -4,22 +4,23 @@ import { AppState, Category, ChecklistItem, Milestone, Scenario, TreeEdge, TreeN
 export const PALETTE = {
   cream: '#F4F1E6', ivory: '#FBF9F1', sand: '#E0DAC6', rust: '#A5654A',
   clay: '#C58F73', taupe: '#8F8670', slate: '#55524A', charcoal: '#2A2A25',
+  umber: '#6F4E37', sandstone: '#C9AE8B', rosewood: '#B07F73', stone: '#A59D8C',
 };
 
 export const CATEGORY_SEED: Array<Category & { share: number }> = [
-  { id: 'venue', name: 'Wedding Venues & Locations', icon: 'landmark', color: PALETTE.rust, kind: 'vendor', share: 0.7, description: 'Where we say I do. Catering, bar and most extras are usually included, so this one carries most of the budget. Venues can be here or abroad.' },
-  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.clay, kind: 'vendor', share: 0.15, description: 'Where we go after.' },
-  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: PALETTE.slate, kind: 'vendor', share: 0.1, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
+  { id: 'venue', name: 'Wedding Venues & Locations', icon: 'landmark', color: PALETTE.rust, kind: 'vendor', share: 0.3, description: 'Where we say I do. Venues can be here or abroad.' },
+  { id: 'catering', name: 'Food & Drink', icon: 'utensils', color: PALETTE.clay, kind: 'vendor', share: 0.2, description: 'Catering, bar, service style and tastings.' },
+  { id: 'attire', name: 'Attire & Beauty', icon: 'shirt', color: PALETTE.umber, kind: 'vendor', share: 0.07, description: 'Dress, suit, tailoring, hair & makeup.' },
+  { id: 'photo', name: 'Photo & Video', icon: 'camera', color: PALETTE.slate, kind: 'vendor', share: 0.1, description: 'Photographers, videographers, albums.' },
+  { id: 'music', name: 'Music & Entertainment', icon: 'music', color: PALETTE.taupe, kind: 'vendor', share: 0.06, description: 'DJ, band, ceremony musicians, MC.' },
+  { id: 'decor', name: 'Flowers & Décor', icon: 'flower', color: PALETTE.sandstone, kind: 'vendor', share: 0.08, description: 'Flowers, rentals, lighting, signage.' },
+  { id: 'lodging', name: 'Transportation & Travel / Lodging', icon: 'bed', color: PALETTE.charcoal, kind: 'vendor', share: 0.05, description: 'Guest travel, shuttles, room blocks, welcome bags.' },
+  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.rosewood, kind: 'vendor', share: 0.08, description: 'Where we go after.' },
+  { id: 'planner', name: 'Admin & Miscellaneous', icon: 'sparkles', color: PALETTE.stone, kind: 'vendor', share: 0.06, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
   // Hidden for now (data is kept; restore them in Settings if they come back).
-  { id: 'catering', name: 'Catering & Bar', icon: 'utensils', color: PALETTE.clay, kind: 'vendor', share: 0, hidden: true, description: 'Food, drinks, service style.' },
-  { id: 'photo', name: 'Photo & Video', icon: 'camera', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Photographers, videographers, albums.' },
-  { id: 'attire', name: 'Attire & Beauty', icon: 'shirt', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Dress, suit, tailoring, hair & makeup.' },
-  { id: 'music', name: 'Music & Entertainment', icon: 'music', color: PALETTE.slate, kind: 'vendor', share: 0, hidden: true, description: 'DJ, band, ceremony musicians, MC.' },
-  { id: 'decor', name: 'Florals & Decor', icon: 'flower', color: PALETTE.rust, kind: 'vendor', share: 0, hidden: true, description: 'Flowers, rentals, lighting, signage.' },
   { id: 'officiant', name: 'Officiant & Ceremony', icon: 'scroll', color: PALETTE.slate, kind: 'vendor', share: 0, hidden: true, description: 'Officiant, traditions, legal paperwork.' },
   { id: 'stationery', name: 'Invites & Stationery', icon: 'mail', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Invitations, programs, website.' },
-  { id: 'lodging', name: 'Guest Lodging & Travel', icon: 'bed', color: PALETTE.clay, kind: 'vendor', share: 0, hidden: true, description: 'Room blocks, shuttles, welcome bags.' },
-  { id: 'cake', name: 'Cake & Desserts', icon: 'cake', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Cake, dessert tables, late-night snacks.' },
+  { id: 'cake', name: 'Cake & Desserts', icon: 'cake', color: PALETTE.clay, kind: 'vendor', share: 0, hidden: true, description: 'Cake, dessert tables, late-night snacks.' },
 ];
 
 /** The three plans. Exact days are a starting point; edit them on the Timelines page. */
@@ -168,7 +169,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 6,
+    version: 7,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],
