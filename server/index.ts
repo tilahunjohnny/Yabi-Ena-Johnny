@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AppState } from '../shared/types';
 import { seedState } from '../shared/seed';
+import { migrateState } from '../shared/migrate';
 import { runChat } from './chat';
 import { authMiddleware } from './auth';
 import { gotchaPath, mergeSecrets, registerRingRoutes, ringUnlocked, stripSecrets } from './ring';
@@ -25,7 +26,10 @@ function load(): AppState {
   try {
     const raw = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     rev = raw.rev ?? 0;
-    return raw.state as AppState;
+    const loaded = raw.state as AppState;
+    const migrated = migrateState(loaded);
+    if (migrated.version !== loaded.version) save(migrated); // persist the upgrade once
+    return migrated;
   } catch {
     const s = seedState();
     save(s);

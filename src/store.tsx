@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from '../shared/types';
 import { seedState } from '../shared/seed';
+import { migrateState } from '../shared/migrate';
 
 type SyncStatus = 'loading' | 'saving' | 'saved' | 'offline';
 
@@ -29,7 +30,7 @@ const LS_KEY = 'yabi-ena-johnny:state:v1';
 function loadLocal(): AppState | null {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as AppState) : null;
+    return raw ? migrateState(JSON.parse(raw) as AppState) : null;
   } catch {
     return null;
   }
@@ -42,7 +43,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('yej:theme');
     if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light'; // Japandi is a light palette; dark is opt-in via the toggle
   });
   const [toastMsg, setToastMsg] = useState('');
   const [ringUnlocked, setRingUnlocked] = useState(false);
@@ -64,7 +65,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         serverRev.current = d.rev;
         online.current = true;
         setRingUnlocked(!!d.ringUnlocked);
-        setState(d.state);
+        setState(migrateState(d.state));
         setSync('saved');
       })
       .catch(() => setSync('offline'));
@@ -109,7 +110,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const d = await (await fetch('/api/state')).json();
           serverRev.current = d.rev;
           setRingUnlocked(!!d.ringUnlocked);
-          replace(d.state);
+          replace(migrateState(d.state));
         }
       } catch { /* offline */ }
     };
@@ -121,7 +122,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const d = await (await fetch('/api/state')).json();
     serverRev.current = d.rev;
     setRingUnlocked(!!d.ringUnlocked);
-    replace(d.state);
+    replace(migrateState(d.state));
   }, [replace]);
 
   const unlockRing = useCallback(async (password: string) => {

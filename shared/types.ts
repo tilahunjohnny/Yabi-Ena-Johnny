@@ -7,6 +7,8 @@ export interface Category {
   color: string;
   description: string;
   kind: 'vendor' | 'people';
+  /** Hidden categories disappear from the sidebar, dashboard and budget, but keep their data. */
+  hidden?: boolean;
 }
 
 export interface Option {
@@ -16,6 +18,8 @@ export interface Option {
   vendor: string; // vendor name, or role for "people" categories
   url: string;
   location: string;
+  /** Country the option is in (blank = unspecified). Compared with Settings.homeCountry to flag out-of-country options. */
+  country: string;
   cost: number;
   rating: number; // 0-5
   status: Status;
@@ -62,6 +66,8 @@ export interface Settings {
   totalBudget: number;
   guestCount: number;
   currency: string;
+  /** Options in any other country are flagged as "abroad". */
+  homeCountry: string;
 }
 
 export interface Note {
@@ -142,6 +148,18 @@ export interface ChecklistItem {
   note: string;
 }
 
+export type GuestSide = 'yabi' | 'johnny';
+export type GuestStatus = 'yes' | 'maybe';
+export interface Guest {
+  id: string;
+  name: string;
+  side: GuestSide;
+  status: GuestStatus;
+  group: string; // e.g. Family, Friends, Work
+  notes: string;
+  createdAt: string;
+}
+
 export interface AppState {
   version: number;
   settings: Settings;
@@ -157,6 +175,7 @@ export interface AppState {
   proposals: ProposalIdea[];
   proposalChecklist: ChecklistItem[];
   checklist: ChecklistItem[];
+  guests: Guest[];
 }
 
 export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`;

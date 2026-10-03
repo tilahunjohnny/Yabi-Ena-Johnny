@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Pencil, Plus, Trash2, Clock, MapPin, Check } from 'lucide-react';
 import { Category, Option, Status, uid } from '../../shared/types';
-import { moveOption, money } from '../../shared/logic';
+import { isAbroad, moveOption, money } from '../../shared/logic';
 import { useStore } from '../store';
 import { Field, Modal, NumInput, Stars, StatusPill, STATUSES, STATUS_LABEL } from './ui';
 
+export const COUNTRIES = ['United States', 'Canada', 'Mexico', 'Dominican Republic', 'Jamaica', 'Bahamas', 'Costa Rica', 'United Kingdom', 'Ireland', 'France', 'Italy', 'Spain', 'Portugal', 'Greece', 'Croatia', 'Turkey', 'Morocco', 'Egypt', 'Ethiopia', 'Eritrea', 'Kenya', 'Tanzania', 'Rwanda', 'South Africa', 'Ghana', 'Japan', 'Thailand', 'Indonesia', 'Maldives', 'United Arab Emirates'];
+
 export function blankOption(categoryId: string, scenarioIds: string[] = []): Option {
   return {
-    id: uid('opt'), categoryId, name: '', vendor: '', url: '', location: '', cost: 0, rating: 0, status: 'idea', pros: '', cons: '', notes: '', scenarioIds,
+    id: uid('opt'), categoryId, name: '', vendor: '', url: '', location: '', country: '', cost: 0, rating: 0, status: 'idea', pros: '', cons: '', notes: '', scenarioIds,
     leadTimeMonths: 0, availability: '', tags: [], custom: {}, createdAt: new Date().toISOString(),
   };
 }
@@ -39,7 +41,11 @@ export function OptionForm({ initial, category, isNew, onClose }: { initial: Opt
         <Field label={people ? 'Name' : 'Name / title'}><input autoFocus value={o.name} onChange={(e) => set('name', e.target.value)} placeholder={people ? 'e.g. Meron' : 'e.g. Rosewood Estate'} /></Field>
         <Field label={people ? 'Role' : 'Vendor'}><input value={o.vendor} onChange={(e) => set('vendor', e.target.value)} placeholder={people ? 'Bridesmaid, best man…' : 'Company or contact'} /></Field>
         <Field label="Link"><input value={o.url} onChange={(e) => set('url', e.target.value)} placeholder="https://" /></Field>
-        <Field label="Location"><input value={o.location} onChange={(e) => set('location', e.target.value)} placeholder="City, country" /></Field>
+        <Field label="City / area"><input value={o.location} onChange={(e) => set('location', e.target.value)} placeholder="e.g. Napa, Lake Como" /></Field>
+        <Field label="Country" hint={isAbroad(o, state.settings.homeCountry) ? `Abroad (home is ${state.settings.homeCountry})` : `Home is ${state.settings.homeCountry}; anything else is flagged as abroad.`}>
+          <input list="countries" value={o.country} onChange={(e) => set('country', e.target.value)} placeholder={state.settings.homeCountry} />
+          <datalist id="countries">{Array.from(new Set([state.settings.homeCountry, ...COUNTRIES])).map((c) => <option key={c} value={c} />)}</datalist>
+        </Field>
         <Field label={`Estimated cost (${state.settings.currency})`}><NumInput value={o.cost} onChange={(n) => set('cost', n)} /></Field>
         <Field label="Book how many months before?" hint="Drives the “book by” date on each timeline."><NumInput value={o.leadTimeMonths} onChange={(n) => set('leadTimeMonths', n)} /></Field>
         <Field label="Availability / timing note"><input value={o.availability} onChange={(e) => set('availability', e.target.value)} placeholder="e.g. Open after June 2027" /></Field>
@@ -109,11 +115,12 @@ export function OptionCard({
         <div className="row wrap" style={{ gap: 8 }}>
           <strong style={{ fontSize: 15.5 }}>{option.name}</strong>
           <StatusPill status={option.status} />
+          {isAbroad(option, state.settings.homeCountry) && <span className="pill abroad">✈ Abroad</span>}
           {scs.map((s) => <span key={s!.id} className="pill" style={{ color: s!.color }}>● {s!.name}</span>)}
         </div>
         <div className="row wrap small muted" style={{ gap: 14, marginTop: 4 }}>
           {option.vendor && <span>{option.vendor}</span>}
-          {option.location && <span className="row" style={{ gap: 4 }}><MapPin size={12} />{option.location}</span>}
+          {(option.location || option.country) && <span className="row" style={{ gap: 4 }}><MapPin size={12} />{[option.location, option.country].filter(Boolean).join(', ')}</span>}
           {option.leadTimeMonths > 0 && <span className="row" style={{ gap: 4 }}><Clock size={12} />book {option.leadTimeMonths}mo ahead</span>}
           {option.url && <a href={option.url} target="_blank" rel="noreferrer" className="row" style={{ gap: 4 }}><ExternalLink size={12} />link</a>}
         </div>
@@ -162,7 +169,8 @@ export function CompareTable({ options }: { options: Option[] }) {
           <tr><th>Cost</th>{options.map((o) => <td key={o.id} className={o.cost > 0 && o.cost === bestCost ? 'best' : ''}>{money(o.cost, cur)}{o.cost > 0 && o.cost === bestCost && options.length > 1 ? ' · lowest' : ''}</td>)}</tr>
           <tr><th>Rating</th>{options.map((o) => <td key={o.id} className={o.rating > 0 && o.rating === bestRating ? 'best' : ''}><Stars value={o.rating} size={14} /></td>)}</tr>
           <Row label="Status" cell={(o) => <StatusPill status={o.status} />} />
-          <Row label="Location" cell={(o) => o.location || '—'} />
+          <Row label="Location" cell={(o) => [o.location, o.country].filter(Boolean).join(', ') || '—'} />
+          <Row label="Abroad?" cell={(o) => (!o.country ? '—' : isAbroad(o, state.settings.homeCountry) ? 'Yes, out of country' : 'No')} />
           <Row label="Book ahead" cell={(o) => (o.leadTimeMonths ? `${o.leadTimeMonths} months` : '—')} />
           <Row label="Availability" cell={(o) => o.availability || '—'} />
           <Row label="Timelines" cell={(o) => (o.scenarioIds.length ? o.scenarioIds.map((id) => state.scenarios.find((s) => s.id === id)?.name).filter(Boolean).join(', ') : 'All')} />

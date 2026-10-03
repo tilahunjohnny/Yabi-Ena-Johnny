@@ -1,4 +1,4 @@
-import { AppState, Option, Status, TreeEdge, TreeNode, uid } from './types';
+import { AppState, Guest, Option, Status, TreeEdge, TreeNode, uid } from './types';
 import { moveOption } from './logic';
 
 /** Tool schemas exposed to the Claude assistant. (fetch_url is handled by the server.) */
@@ -19,6 +19,7 @@ export const TOOL_DEFS = [
         vendor: { type: 'string', description: 'Vendor name (or role for wedding-party people)' },
         url: { type: 'string' },
         location: { type: 'string' },
+        country: { type: 'string', description: 'Country the venue/option is in (used to flag out-of-country options)' },
         cost: { type: 'number', description: 'Total estimated cost in the budget currency' },
         rating: { type: 'number', description: '0-5' },
         status: { type: 'string', enum: ['idea', 'shortlist', 'chosen', 'rejected'] },
@@ -39,7 +40,7 @@ export const TOOL_DEFS = [
       type: 'object',
       properties: {
         option: { type: 'string', description: 'Option id or (part of) its name' },
-        name: { type: 'string' }, vendor: { type: 'string' }, url: { type: 'string' }, location: { type: 'string' },
+        name: { type: 'string' }, vendor: { type: 'string' }, url: { type: 'string' }, location: { type: 'string' }, country: { type: 'string' },
         cost: { type: 'number' }, rating: { type: 'number' },
         status: { type: 'string', enum: ['idea', 'shortlist', 'chosen', 'rejected'] },
         pros: { type: 'string' }, cons: { type: 'string' }, notes: { type: 'string' },
@@ -148,6 +149,36 @@ export const TOOL_DEFS = [
     },
   },
   {
+    name: 'add_guest',
+    description: "Add someone to the wedding guest list on Yabi's side or Johnny's side.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' }, side: { type: 'string', enum: ['yabi', 'johnny'] }, status: { type: 'string', enum: ['yes', 'maybe'] },
+        group: { type: 'string', description: 'e.g. Family, Friends, Work' }, notes: { type: 'string' },
+      },
+      required: ['name', 'side'],
+    },
+  },
+  {
+    name: 'update_guest',
+    description: 'Change a guest: mark them yes/maybe, move them to the other side, rename, regroup or add notes.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        guest: { type: 'string', description: 'Guest id or (part of) their name' },
+        name: { type: 'string' }, side: { type: 'string', enum: ['yabi', 'johnny'] }, status: { type: 'string', enum: ['yes', 'maybe'] },
+        group: { type: 'string' }, notes: { type: 'string' },
+      },
+      required: ['guest'],
+    },
+  },
+  {
+    name: 'remove_guest',
+    description: 'Remove someone from the guest list.',
+    input_schema: { type: 'object', properties: { guest: { type: 'string' } }, required: ['guest'] },
+  },
+  {
     name: 'add_category',
     description: 'Add a new custom planning category.',
     input_schema: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' } }, required: ['name'] },
@@ -158,7 +189,8 @@ const norm = (s: unknown) => String(s ?? '').trim().toLowerCase();
 
 function findCategory(state: AppState, ref: unknown) {
   const r = norm(ref);
-  return state.categories.find((c) => c.id === r || norm(c.name) === r) ?? state.categories.find((c) => norm(c.name).includes(r) || r.includes(c.id));
+  const pool = state.categories.filter((c) => !c.hidden);
+  return pool.find((c) => c.id === r || norm(c.name) === r) ?? pool.find((c) => norm(c.name).includes(r) || r.includes(c.id));
 }
 function findOption(state: AppState, ref: unknown) {
   const r = norm(ref);
@@ -184,10 +216,10 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
   switch (name) {
     case 'add_option': {
       const cat = findCategory(state, input.category);
-      if (!cat) return fail(`No category matching "${input.category}". Categories: ${state.categories.map((c) => `${c.id} (${c.name})`).join(', ')}`);
+      if (!cat) return fail(`No category matching "${input.category}". Categories: ${state.categories.filter((c) => !c.hidden).map((c) => `${c.id} (${c.name})`).join(', ')}`);
       const scenarioIds = ((input.scenarios as string[]) ?? []).map((s) => findScenario(state, s)?.id).filter(Boolean) as string[];
       const opt: Option = {
-        id: uid('opt'), categoryId: cat.id, name: String(input.name), vendor: input.vendor ?? '', url: input.url ?? '', location: input.location ?? '',
+        id: uid('opt'), categoryId: cat.id, name: String(input.name), vendor: input.vendor ?? '', url: input.url ?? '', location: input.location ?? '', country: input.country ?? '',
         cost: Number(input.cost) || 0, rating: clampRating(input.rating), status: validStatus(input.status) ?? 'idea',
         pros: input.pros ?? '', cons: input.cons ?? '', notes: input.notes ?? '', scenarioIds, leadTimeMonths: Number(input.lead_time_months) || 0,
         availability: input.availability ?? '', tags: [], custom: {}, createdAt: new Date().toISOString(),
@@ -198,7 +230,7 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       const o = findOption(state, input.option);
       if (!o) return fail(`No option matching "${input.option}".`);
       const next: Option = { ...o };
-      for (const k of ['name', 'vendor', 'url', 'location', 'pros', 'cons', 'notes', 'availability'] as const) if (input[k] !== undefined) next[k] = String(input[k]);
+      for (const k of ['name', 'vendor', 'url', 'location', 'country', 'pros', 'cons', 'notes', 'availability'] as const) if (input[k] !== undefined) next[k] = String(input[k]);
       if (input.cost !== undefined) next.cost = Number(input.cost) || 0;
       if (input.rating !== undefined) next.rating = clampRating(input.rating);
       if (input.lead_time_months !== undefined) next.leadTimeMonths = Number(input.lead_time_months) || 0;
@@ -304,8 +336,31 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       }
       return { state: { ...state, tree: { nodes, edges } }, message: 'Decision tree updated.', action: `Tree: if ${input.condition} → ${input.outcome}` };
     }
+    case 'add_guest': {
+      const side = norm(input.side).startsWith('j') ? 'johnny' : 'yabi';
+      const g: Guest = { id: uid('g'), name: String(input.name), side, status: input.status === 'maybe' ? 'maybe' : 'yes', group: input.group ?? '', notes: input.notes ?? '', createdAt: new Date().toISOString() };
+      return { state: { ...state, guests: [...state.guests, g] }, message: `Added ${g.name} (${side}, ${g.status}).`, action: `Added guest ${g.name} (${side === 'yabi' ? "Yabi's" : "Johnny's"} side)` };
+    }
+    case 'update_guest': {
+      const r = norm(input.guest);
+      const g = state.guests.find((x) => x.id === input.guest) ?? state.guests.find((x) => norm(x.name) === r) ?? state.guests.find((x) => norm(x.name).includes(r));
+      if (!g) return fail(`No guest matching "${input.guest}".`);
+      const next: Guest = { ...g };
+      if (input.name !== undefined) next.name = String(input.name);
+      if (input.group !== undefined) next.group = String(input.group);
+      if (input.notes !== undefined) next.notes = String(input.notes);
+      if (input.status === 'yes' || input.status === 'maybe') next.status = input.status;
+      if (input.side !== undefined) next.side = norm(input.side).startsWith('j') ? 'johnny' : 'yabi';
+      return { state: { ...state, guests: state.guests.map((x) => (x.id === g.id ? next : x)) }, message: `Updated ${next.name}.`, action: `Updated guest ${next.name}` };
+    }
+    case 'remove_guest': {
+      const r = norm(input.guest);
+      const g = state.guests.find((x) => x.id === input.guest) ?? state.guests.find((x) => norm(x.name) === r) ?? state.guests.find((x) => norm(x.name).includes(r));
+      if (!g) return fail(`No guest matching "${input.guest}".`);
+      return { state: { ...state, guests: state.guests.filter((x) => x.id !== g.id) }, message: `Removed ${g.name}.`, action: `Removed guest ${g.name}` };
+    }
     case 'add_category': {
-      const cat = { id: uid('cat'), name: String(input.name), icon: 'sparkles', color: '#c9a45c', description: input.description ?? '', kind: 'vendor' as const };
+      const cat = { id: uid('cat'), name: String(input.name), icon: 'sparkles', color: '#8C786A', description: input.description ?? '', kind: 'vendor' as const };
       return { state: { ...state, categories: [...state.categories, cat], budget: [...state.budget, { categoryId: cat.id, min: 0, target: 0, max: 0 }] }, message: `Created category ${cat.id}.`, action: `New category "${cat.name}"` };
     }
     default:

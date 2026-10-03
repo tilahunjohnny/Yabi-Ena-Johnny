@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Plus, Trash2 } from 'lucide-react';
 import { addMonths, SCENARIO_COLORS } from '../../shared/seed';
-import { money, monthsBetween, today, top3, totals } from '../../shared/logic';
+import { money, monthsBetween, today, top3, totals, visibleCategories } from '../../shared/logic';
 import { Scenario, uid } from '../../shared/types';
 import { useStore } from '../store';
 import { Field, fmtDate, PageHead } from '../components/ui';
@@ -35,7 +35,7 @@ export default function Timeline() {
   const items = (sc: Scenario): Item[] => {
     const ms: Item[] = sc.milestones.map((m) => ({ key: m.id, msId: m.id, title: m.title, date: addMonths(sc.date, -m.monthsBefore), done: m.done, categoryId: m.categoryId, kind: 'milestone' }));
     // "Book by" dates derived from the option lead times that apply to this scenario.
-    const bookings: Item[] = state.categories.flatMap((c) =>
+    const bookings: Item[] = visibleCategories(state).flatMap((c) =>
       top3(state, c.id, sc.id).filter((o) => o.leadTimeMonths > 0 && o.status !== 'idea').slice(0, 1).map((o) => ({
         key: `b_${o.id}`, title: `Book ${o.name}`, date: addMonths(sc.date, -o.leadTimeMonths), categoryId: c.id, kind: 'booking' as const, cost: o.cost,
       })),

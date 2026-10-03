@@ -1,43 +1,47 @@
 import { AppState, Category, ChecklistItem, Milestone, Scenario, TreeEdge, TreeNode, uid } from './types';
 
+/** Japandi palette. */
+export const PALETTE = {
+  softWhite: '#F2EEE9', beige: '#E0C9A8', natural: '#D6BDA0', taupe: '#8C786A',
+  moss: '#585A38', softBlack: '#262626', terracotta: '#9C4A2C', walnut: '#5A3824',
+};
+
 export const CATEGORY_SEED: Array<Category & { share: number }> = [
-  { id: 'venue', name: 'Venue & Location', icon: 'landmark', color: '#c9a45c', kind: 'vendor', share: 0.3, description: 'Where we say I do — ceremony and reception spaces.' },
-  { id: 'party', name: 'Wedding Party', icon: 'users', color: '#d98ca3', kind: 'people', share: 0.01, description: 'Who stands with us: groomsmen, bridesmaids, readers, family roles.' },
-  { id: 'catering', name: 'Catering & Bar', icon: 'utensils', color: '#e08a5b', kind: 'vendor', share: 0.2, description: 'Food, drinks, service style.' },
-  { id: 'photo', name: 'Photo & Video', icon: 'camera', color: '#7fa8d6', kind: 'vendor', share: 0.1, description: 'Photographers, videographers, albums.' },
-  { id: 'attire', name: 'Attire & Beauty', icon: 'shirt', color: '#b48ad9', kind: 'vendor', share: 0.07, description: 'Dress, suit, tailoring, hair & makeup.' },
-  { id: 'music', name: 'Music & Entertainment', icon: 'music', color: '#6fc2a3', kind: 'vendor', share: 0.06, description: 'DJ, band, ceremony musicians, MC.' },
-  { id: 'decor', name: 'Florals & Decor', icon: 'flower', color: '#e6a5c4', kind: 'vendor', share: 0.08, description: 'Flowers, rentals, lighting, signage.' },
-  { id: 'officiant', name: 'Officiant & Ceremony', icon: 'scroll', color: '#a6b86a', kind: 'vendor', share: 0.01, description: 'Officiant, traditions, legal paperwork.' },
-  { id: 'stationery', name: 'Invites & Stationery', icon: 'mail', color: '#8fa0b8', kind: 'vendor', share: 0.02, description: 'Save-the-dates, invitations, programs, website.' },
-  { id: 'lodging', name: 'Guest Lodging & Travel', icon: 'bed', color: '#7ec4c9', kind: 'vendor', share: 0.03, description: 'Room blocks, shuttles, welcome bags.' },
-  { id: 'cake', name: 'Cake & Desserts', icon: 'cake', color: '#f0b27a', kind: 'vendor', share: 0.02, description: 'Cake, dessert tables, late-night snacks.' },
-  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: '#6aa7e0', kind: 'vendor', share: 0.08, description: 'Where we go after.' },
-  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: '#c0c0c8', kind: 'vendor', share: 0.02, description: 'Planner, insurance, favors, tips, contingency.' },
+  { id: 'venue', name: 'Wedding Venues & Locations', icon: 'landmark', color: PALETTE.terracotta, kind: 'vendor', share: 0.7, description: 'Where we say I do. Catering, bar and most extras are usually included, so this one carries most of the budget. Venues can be here or abroad.' },
+  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.walnut, kind: 'vendor', share: 0.15, description: 'Where we go after.' },
+  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: PALETTE.taupe, kind: 'vendor', share: 0.1, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
+  // Hidden for now (data is kept; restore them in Settings if they come back).
+  { id: 'catering', name: 'Catering & Bar', icon: 'utensils', color: PALETTE.natural, kind: 'vendor', share: 0, hidden: true, description: 'Food, drinks, service style.' },
+  { id: 'photo', name: 'Photo & Video', icon: 'camera', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Photographers, videographers, albums.' },
+  { id: 'attire', name: 'Attire & Beauty', icon: 'shirt', color: PALETTE.walnut, kind: 'vendor', share: 0, hidden: true, description: 'Dress, suit, tailoring, hair & makeup.' },
+  { id: 'music', name: 'Music & Entertainment', icon: 'music', color: PALETTE.moss, kind: 'vendor', share: 0, hidden: true, description: 'DJ, band, ceremony musicians, MC.' },
+  { id: 'decor', name: 'Florals & Decor', icon: 'flower', color: PALETTE.terracotta, kind: 'vendor', share: 0, hidden: true, description: 'Flowers, rentals, lighting, signage.' },
+  { id: 'officiant', name: 'Officiant & Ceremony', icon: 'scroll', color: PALETTE.moss, kind: 'vendor', share: 0, hidden: true, description: 'Officiant, traditions, legal paperwork.' },
+  { id: 'stationery', name: 'Invites & Stationery', icon: 'mail', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Invitations, programs, website.' },
+  { id: 'lodging', name: 'Guest Lodging & Travel', icon: 'bed', color: PALETTE.natural, kind: 'vendor', share: 0, hidden: true, description: 'Room blocks, shuttles, welcome bags.' },
+  { id: 'cake', name: 'Cake & Desserts', icon: 'cake', color: PALETTE.beige, kind: 'vendor', share: 0, hidden: true, description: 'Cake, dessert tables, late-night snacks.' },
 ];
 
-export const SCENARIO_COLORS = ['#c9a45c', '#6fc2a3', '#7fa8d6', '#d98ca3', '#b48ad9', '#e08a5b'];
+/** The three plans. Exact days are a starting point; edit them on the Timelines page. */
+export const PLAN_SEED = [
+  { id: 'sc_a', name: 'Plan A', label: 'Sep 2027', date: '2027-09-18', color: PALETTE.terracotta },
+  { id: 'sc_b', name: 'Plan B', label: 'May 2027', date: '2027-05-15', color: PALETTE.moss },
+  { id: 'sc_c', name: 'Plan C', label: 'Oct 2027', date: '2027-10-16', color: PALETTE.walnut },
+];
+
+export const SCENARIO_COLORS = [PALETTE.terracotta, PALETTE.moss, PALETTE.walnut, PALETTE.taupe, PALETTE.natural, PALETTE.softBlack];
 
 export const MILESTONE_TEMPLATE: Array<Omit<Milestone, 'id' | 'done'>> = [
   { title: 'Set total budget & priorities', monthsBefore: 14, categoryId: 'planner' },
-  { title: 'Draft first-pass guest list', monthsBefore: 13, categoryId: 'party' },
-  { title: 'Tour & book venue', monthsBefore: 12, categoryId: 'venue' },
-  { title: 'Hire planner / day-of coordinator', monthsBefore: 11, categoryId: 'planner' },
-  { title: 'Book photographer & videographer', monthsBefore: 10, categoryId: 'photo' },
-  { title: 'Book caterer', monthsBefore: 10, categoryId: 'catering' },
-  { title: 'Book band / DJ', monthsBefore: 9, categoryId: 'music' },
-  { title: 'Ask the wedding party', monthsBefore: 9, categoryId: 'party' },
-  { title: 'Start dress / suit shopping', monthsBefore: 9, categoryId: 'attire' },
+  { title: 'Draft first-pass guest list', monthsBefore: 13, categoryId: 'planner' },
+  { title: 'Shortlist venues & locations', monthsBefore: 13, categoryId: 'venue' },
+  { title: 'Tour / visit top venues', monthsBefore: 12, categoryId: 'venue' },
+  { title: 'Book venue', monthsBefore: 11, categoryId: 'venue' },
+  { title: 'Hire planner / day-of coordinator', monthsBefore: 10, categoryId: 'planner' },
   { title: 'Plan honeymoon & book flights', monthsBefore: 8, categoryId: 'honeymoon' },
-  { title: 'Send save-the-dates', monthsBefore: 8, categoryId: 'stationery' },
-  { title: 'Reserve guest room blocks', monthsBefore: 8, categoryId: 'lodging' },
-  { title: 'Book officiant', monthsBefore: 7, categoryId: 'officiant' },
-  { title: 'Choose florist & decor', monthsBefore: 6, categoryId: 'decor' },
-  { title: 'Cake tasting & order', monthsBefore: 4, categoryId: 'cake' },
-  { title: 'Send invitations', monthsBefore: 3, categoryId: 'stationery' },
-  { title: 'Marriage license & legal paperwork', monthsBefore: 2, categoryId: 'officiant' },
-  { title: 'Final dress / suit fittings', monthsBefore: 1, categoryId: 'attire' },
-  { title: 'Final headcount to caterer', monthsBefore: 1, categoryId: 'catering' },
+  { title: 'Finalize guest list', monthsBefore: 7, categoryId: 'planner' },
+  { title: 'Send digital invitations', monthsBefore: 5, categoryId: 'planner' },
+  { title: 'Final headcount to venue', monthsBefore: 1, categoryId: 'venue' },
   { title: 'Confirm all vendors & timeline', monthsBefore: 0.5, categoryId: 'planner' },
 ];
 
@@ -52,6 +56,15 @@ export function addMonths(iso: string, months: number): string {
   d.setDate(d.getDate() + Math.round((months - whole) * 30));
   return d.toISOString().slice(0, 10);
 }
+
+/** Added when the plan moved to venues that may be out of the country, and digital invitations. */
+export const NEW_CHECKLIST: Array<[string, string]> = [
+  ['venue', 'Out of country: legal marriage requirements and paperwork'],
+  ['venue', 'Out of country: passport and visa needs for guests'],
+  ['venue', 'Out of country: travel cost and time for elders and family'],
+  ['venue', 'Capacity vs. our guest list (yes + maybe)'],
+  ['planner', 'Digital invitations: platform, design and RSVP tracking'],
+];
 
 const CHECKLIST_SEED: Array<[string, string]> = [
   ['venue', 'Ceremony and reception in one place, or two?'],
@@ -98,6 +111,7 @@ const CHECKLIST_SEED: Array<[string, string]> = [
   ['planner', 'Welcome party / rehearsal dinner / brunch'],
   ['planner', 'Contingency fund (5-10%)'],
   ['planner', 'Name change, legal documents, and registry'],
+  ...NEW_CHECKLIST,
 ];
 
 const PROPOSAL_CHECKLIST_SEED = [
@@ -150,15 +164,12 @@ export function seedState(): AppState {
     const target = Math.round((totalBudget * c.share) / 100) * 100;
     return { categoryId: c.id, min: Math.round((target * 0.7) / 100) * 100, target, max: Math.round((target * 1.35) / 100) * 100 };
   });
-  const scenarios: Scenario[] = [
-    { id: 'sc_a', name: 'Plan A — Earlier', date: addMonths(new Date().toISOString().slice(0, 10), 10), color: SCENARIO_COLORS[0], notes: 'Faster timeline. Fewer venue options, quicker decisions.', milestones: makeMilestones() },
-    { id: 'sc_b', name: 'Plan B — Later', date: addMonths(new Date().toISOString().slice(0, 10), 18), color: SCENARIO_COLORS[1], notes: 'More time to save, more availability, peak season pricing.', milestones: makeMilestones() },
-  ];
-  const checklist: ChecklistItem[] = CHECKLIST_SEED.map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
+  const scenarios: Scenario[] = PLAN_SEED.map((p) => ({ id: p.id, name: `${p.name} — ${p.label}`, date: p.date, color: p.color, notes: '', milestones: makeMilestones() }));
+  const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 1,
-    settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD' },
+    version: 2,
+    settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],
     scenarios,
@@ -170,5 +181,6 @@ export function seedState(): AppState {
     proposals: [],
     proposalChecklist,
     checklist,
+    guests: [],
   };
 }

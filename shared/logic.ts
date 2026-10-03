@@ -1,4 +1,4 @@
-import { AppState, Option, Scenario } from './types';
+import { AppState, Category, Option, Scenario } from './types';
 
 /** Options for a category, in rank order, optionally filtered to a scenario. */
 export function optionsFor(state: AppState, categoryId: string, scenarioId: string = 'all'): Option[] {
@@ -6,6 +6,9 @@ export function optionsFor(state: AppState, categoryId: string, scenarioId: stri
     (o) => o.categoryId === categoryId && (scenarioId === 'all' || o.scenarioIds.length === 0 || o.scenarioIds.includes(scenarioId)),
   );
 }
+
+/** Categories that are shown (not hidden). */
+export const visibleCategories = (state: AppState): Category[] => state.categories.filter((c) => !c.hidden);
 
 export const isLive = (o: Option) => o.status !== 'rejected';
 
@@ -26,7 +29,9 @@ export function estimateFor(state: AppState, categoryId: string, scenarioId: str
 
 export function totals(state: AppState, scenarioId: string = 'all') {
   let min = 0, target = 0, max = 0, estimate = 0, locked = 0;
+  const visible = new Set(visibleCategories(state).map((c) => c.id));
   for (const line of state.budget) {
+    if (!visible.has(line.categoryId)) continue;
     min += line.min;
     target += line.target;
     max += line.max;
@@ -66,4 +71,17 @@ export function moveOption(options: Option[], id: string, dir: -1 | 1 | 'top'): 
 
 export function money(n: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n || 0);
+}
+
+/** Is this option in a different country than home? (Unknown country counts as not abroad.) */
+export const isAbroad = (o: Pick<Option, 'country'>, homeCountry: string) =>
+  !!o.country.trim() && o.country.trim().toLowerCase() !== homeCountry.trim().toLowerCase();
+
+export function guestCounts(state: AppState) {
+  const by = (side: 'yabi' | 'johnny') => {
+    const g = state.guests.filter((x) => x.side === side);
+    return { yes: g.filter((x) => x.status === 'yes').length, maybe: g.filter((x) => x.status === 'maybe').length };
+  };
+  const yabi = by('yabi'), johnny = by('johnny');
+  return { yabi, johnny, yes: yabi.yes + johnny.yes, maybe: yabi.maybe + johnny.maybe };
 }

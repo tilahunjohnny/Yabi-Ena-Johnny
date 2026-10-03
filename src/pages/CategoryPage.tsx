@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { GitCompare, MessageSquare, Plus } from 'lucide-react';
-import { optionsFor, top3, money } from '../../shared/logic';
+import { isAbroad, optionsFor, top3, money } from '../../shared/logic';
 import { Option, Status } from '../../shared/types';
 import { useStore } from '../store';
 import { CatIcon, Empty, PageHead, Seg } from '../components/ui';
@@ -15,6 +15,7 @@ export default function CategoryPage() {
   const [editing, setEditing] = useState<{ option: Option; isNew: boolean } | null>(null);
   const [filter, setFilter] = useState<'all' | Status>('all');
   const [sort, setSort] = useState<'rank' | 'cost' | 'rating'>('rank');
+  const [place, setPlace] = useState<string>('all'); // all | home | abroad | c:<Country>
   const [selected, setSelected] = useState<string[]>([]);
   const [comparing, setComparing] = useState(false);
 
@@ -24,7 +25,10 @@ export default function CategoryPage() {
   const podium = top3(state, cat.id, scenarioId);
   const line = state.budget.find((b) => b.categoryId === cat.id);
   const rankOf = (o: Option) => state.options.filter((x) => x.categoryId === cat.id).findIndex((x) => x.id === o.id) + 1;
-  let list = all.filter((o) => filter === 'all' || o.status === filter);
+  const home = state.settings.homeCountry;
+  const countries = Array.from(all.reduce((m, o) => (o.country.trim() ? m.set(o.country.trim(), (m.get(o.country.trim()) ?? 0) + 1) : m), new Map<string, number>()));
+  const inPlace = (o: Option) => place === 'all' || (place === 'home' && !isAbroad(o, home)) || (place === 'abroad' && isAbroad(o, home)) || (place.startsWith('c:') && o.country.trim() === place.slice(2));
+  let list = all.filter((o) => (filter === 'all' || o.status === filter) && inPlace(o));
   if (sort === 'cost') list = [...list].sort((a, b) => a.cost - b.cost);
   if (sort === 'rating') list = [...list].sort((a, b) => b.rating - a.rating);
   const chosen = selected.map((sid) => all.find((o) => o.id === sid)).filter(Boolean) as Option[];
@@ -72,7 +76,7 @@ export default function CategoryPage() {
               <div className={`medal m${i + 1}`}>{i + 1}</div>
               <div className="eyebrow" style={{ marginBottom: 6 }}>{o.status === 'chosen' ? '✓ Chosen' : i === 0 ? 'Leading' : 'Contender'}</div>
               <h3 style={{ paddingRight: 36 }}>{o.name}</h3>
-              <div className="small muted">{[o.vendor, o.location].filter(Boolean).join(' · ') || '—'}</div>
+              <div className="small muted">{[o.vendor, [o.location, o.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || '—'}{isAbroad(o, home) && <span className="pill abroad" style={{ marginLeft: 6 }}>✈ Abroad</span>}</div>
               <div className="price" style={{ margin: '12px 0 4px' }}>{money(o.cost, state.settings.currency)}</div>
               <div className="small" style={{ minHeight: 40 }}>{o.pros && <div><span style={{ color: 'var(--good)' }}>+</span> {o.pros}</div>}{o.cons && <div><span style={{ color: 'var(--bad)' }}>−</span> {o.cons}</div>}</div>
               <button className="btn sm" style={{ marginTop: 10 }} onClick={() => setEditing({ option: o, isNew: false })}>Open</button>
@@ -98,6 +102,19 @@ export default function CategoryPage() {
           <Seg value={sort} onChange={setSort} options={[{ value: 'rank', label: 'My rank' }, { value: 'cost', label: 'Cost ↑' }, { value: 'rating', label: 'Rating' }]} />
         </div>
       </div>
+      {countries.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div className="tiny muted" style={{ marginBottom: 2 }}>Where</div>
+          <div className="chip-pick" style={{ marginTop: 0 }}>
+            <button className={place === 'all' ? 'on' : ''} onClick={() => setPlace('all')}>All places · {all.length}</button>
+            <button className={place === 'home' ? 'on' : ''} onClick={() => setPlace('home')}>{home} · {all.filter((o) => !isAbroad(o, home)).length}</button>
+            <button className={place === 'abroad' ? 'on' : ''} onClick={() => setPlace('abroad')}>✈ Abroad · {all.filter((o) => isAbroad(o, home)).length}</button>
+            {countries.filter(([c]) => c.toLowerCase() !== home.toLowerCase()).map(([c, n]) => (
+              <button key={c} className={place === `c:${c}` ? 'on' : ''} onClick={() => setPlace(`c:${c}`)}>{c} · {n}</button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="col">
         {list.map((o) => <OptionCard key={o.id} option={o} rank={rankOf(o)} selected={selected.includes(o.id)} onSelect={() => { toggle(o.id); setComparing(true); }} onEdit={() => setEditing({ option: o, isNew: false })} />)}
         {list.length === 0 && all.length > 0 && <div className="muted small">Nothing matches this filter.</div>}

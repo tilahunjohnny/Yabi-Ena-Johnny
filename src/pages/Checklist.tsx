@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { uid } from '../../shared/types';
+import { visibleCategories } from '../../shared/logic';
 import { useStore } from '../store';
 import { CatIcon, PageHead, Seg } from '../components/ui';
 
@@ -8,8 +9,9 @@ export default function Checklist() {
   const { state, update } = useStore();
   const [show, setShow] = useState<'all' | 'todo' | 'done'>('all');
   const [draft, setDraft] = useState<Record<string, string>>({});
-  const done = state.checklist.filter((c) => c.done).length;
-  const pct = (done / Math.max(1, state.checklist.length)) * 100;
+  const shown = state.checklist.filter((c) => visibleCategories(state).some((v) => v.id === c.categoryId));
+  const done = shown.filter((c) => c.done).length;
+  const pct = (done / Math.max(1, shown.length)) * 100;
 
   const add = (categoryId: string) => {
     const title = (draft[categoryId] ?? '').trim();
@@ -22,11 +24,11 @@ export default function Checklist() {
     <div className="page">
       <PageHead eyebrow="Everything to think about" title="Checklist" subtitle="Every decision a wedding asks of you, grouped by category. Tick things off as you decide, and add your own." actions={<Seg value={show} onChange={setShow} options={[{ value: 'all', label: 'All' }, { value: 'todo', label: 'To decide' }, { value: 'done', label: 'Done' }]} />} />
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="row between"><strong>{done} of {state.checklist.length} decided</strong><span className="muted small">{Math.round(pct)}%</span></div>
+        <div className="row between"><strong>{done} of {shown.length} decided</strong><span className="muted small">{Math.round(pct)}%</span></div>
         <div className="progress" style={{ marginTop: 10 }}><i style={{ width: `${pct}%` }} /></div>
       </div>
       <div className="grid g2" style={{ alignItems: 'start' }}>
-        {state.categories.map((c) => {
+        {visibleCategories(state).map((c) => {
           const items = state.checklist.filter((i) => i.categoryId === c.id && (show === 'all' || (show === 'done' ? i.done : !i.done)));
           return (
             <div key={c.id} className="card flat">

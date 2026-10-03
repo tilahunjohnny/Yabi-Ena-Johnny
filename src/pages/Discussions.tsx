@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Check, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { Note, uid } from '../../shared/types';
+import { visibleCategories } from '../../shared/logic';
 import { useStore } from '../store';
 import { Empty, Field, Modal, PageHead, Seg } from '../components/ui';
 
@@ -33,7 +34,7 @@ export default function Discussions() {
         <Seg value={show} onChange={setShow} options={[{ value: 'all', label: 'All' }, { value: 'open', label: 'Open' }, { value: 'resolved', label: 'Resolved' }]} />
         <select value={catFilter} onChange={(e) => (e.target.value === 'all' ? setParams({}) : setParams({ cat: e.target.value }))} style={{ width: 'auto' }}>
           <option value="all">All categories</option>
-          {state.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {visibleCategories(state).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
 
@@ -74,7 +75,7 @@ export default function Discussions() {
           <div className="col" style={{ gap: 14 }}>
             <Field label="Topic"><input autoFocus value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="e.g. Venue: Lake house vs. ballroom" /></Field>
             <div className="grid g2">
-              <Field label="Category"><select value={editing.categoryId} onChange={(e) => setEditing({ ...editing, categoryId: e.target.value })}><option value="">General</option>{state.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+              <Field label="Category"><select value={editing.categoryId} onChange={(e) => setEditing({ ...editing, categoryId: e.target.value })}><option value="">General</option>{visibleCategories(state).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
               <Field label="Who"><input value={editing.author} onChange={(e) => setEditing({ ...editing, author: e.target.value })} /></Field>
             </div>
             <Field label="What we discussed"><textarea style={{ minHeight: 140 }} value={editing.body} onChange={(e) => setEditing({ ...editing, body: e.target.value })} /></Field>

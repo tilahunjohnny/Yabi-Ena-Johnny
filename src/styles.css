@@ -1,16 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  --bg: #faf7f2; --surface: #ffffff; --surface2: #f4efe6; --border: #e9e1d2; --text: #1e1b24; --muted: #7b7584;
-  --accent: #b08a3e; --accent-ink: #ffffff; --accent-soft: rgba(176, 138, 62, 0.12); --rose: #c4607f; --good: #3f9b72; --warn: #d08a2e; --bad: #c9503f;
-  --shadow: 0 1px 2px rgba(40, 30, 10, 0.05), 0 8px 24px rgba(40, 30, 10, 0.06);
+  /* Japandi palette: soft white, beige, natural, warm taupe, moss green, soft black, terracotta, walnut */
+  --bg: #F2EEE9; --surface: #FAF7F3; --surface2: #EBE2D6; --border: #DDD0C0; --text: #2B2724; --muted: #85746A;
+  --accent: #9C4A2C; --accent-ink: #FFF8F2; --accent-soft: rgba(156, 74, 44, 0.10); --rose: #7A5238; --good: #5F6B3A; --warn: #B07A2E; --bad: #B3392F;
+  --shadow: 0 1px 2px rgba(60, 40, 25, 0.05), 0 8px 24px rgba(60, 40, 25, 0.07);
   --radius: 16px;
   --serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 :root[data-theme='dark'] {
-  --bg: #0e0d12; --surface: #17151c; --surface2: #1f1c26; --border: #2b2833; --text: #f4efe7; --muted: #9a94a6;
-  --accent: #d6b26b; --accent-ink: #1a1408; --accent-soft: rgba(214, 178, 107, 0.14); --rose: #e6a3b8; --good: #62c79c; --warn: #e3a850; --bad: #ec7a6a;
+  --bg: #1E1C1A; --surface: #282522; --surface2: #322E2A; --border: #433D37; --text: #F0E9E0; --muted: #A1917F;
+  --accent: #C9754F; --accent-ink: #1E120B; --accent-soft: rgba(201, 117, 79, 0.16); --rose: #B08A66; --good: #9DAF73; --warn: #D9A150; --bad: #E26F5F;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -89,8 +90,8 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
 /* Option cards */
 .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .pod { position: relative; overflow: hidden; }
-.pod .medal { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 99px; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 15px; color: #2a2008; }
-.medal.m1 { background: linear-gradient(135deg, #f1d58d, #c9a14c); } .medal.m2 { background: linear-gradient(135deg, #e6e8ee, #aeb4c2); } .medal.m3 { background: linear-gradient(135deg, #e7be9a, #b9794d); }
+.pod .medal { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 99px; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 15px; color: #2b1c10; }
+.medal.m1 { background: linear-gradient(135deg, #E9D2AC, #B98F5C); } .medal.m2 { background: linear-gradient(135deg, #E6DFD6, #A39A90); } .medal.m3 { background: linear-gradient(135deg, #D7A98C, #8C5A3C); }
 .pod.m1 { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
 .opt { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; }
 .opt .rank { width: 30px; height: 30px; border-radius: 99px; background: var(--surface2); display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
@@ -109,7 +110,7 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
 .num { max-width: 120px; text-align: right; padding: 6px 9px; }
 
 /* Modal */
-.overlay { position: fixed; inset: 0; z-index: 60; background: rgba(8, 6, 12, .55); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 20px; animation: fade .15s; }
+.overlay { position: fixed; inset: 0; z-index: 60; background: rgba(30, 24, 20, .5); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 20px; animation: fade .15s; }
 @keyframes fade { from { opacity: 0; } }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: min(720px, 100%); max-height: 90vh; overflow: auto; box-shadow: 0 30px 80px rgba(0, 0, 0, .35); animation: rise .2s; }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; }
@@ -183,3 +184,12 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
   .wall-pic:hover { transform: translate(-50%, -50%) rotate(0deg) scale(1.25); }
   .gate-row { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); flex: none; margin: 0; width: 340px; }
 }
+
+/* Guest list */
+.guest { padding: 11px 0; border-top: 1px solid var(--border); }
+.guest-name { border-color: transparent; background: transparent; padding: 6px 8px; font-weight: 500; }
+.guest-name:hover { background: var(--surface2); }
+.guest-name:focus { background: var(--surface2); }
+.seg button.on.maybe { color: var(--warn); }
+.btn.has-note { color: var(--accent); }
+.pill.abroad { background: var(--accent-soft); color: var(--accent); border-color: transparent; }

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import { CalendarRange, CheckSquare, CloudOff, Cloud, Gem, LogOut, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
+import { CalendarRange, CheckSquare, CloudOff, Cloud, Gem, LogOut, Users, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
 import { useStore } from './store';
 import { CatIcon } from './components/ui';
+import { visibleCategories } from '../shared/logic';
+import Guests from './pages/Guests';
 import Dashboard from './pages/Dashboard';
 import CategoryPage from './pages/CategoryPage';
 import Budget from './pages/Budget';
@@ -39,11 +41,12 @@ export default function App() {
           <div className="nav-label">Plan</div>
           {link('/budget', <PiggyBank size={17} />, 'Budget')}
           {link('/timeline', <CalendarRange size={17} />, 'Timelines')}
+          {link('/guests', <Users size={17} />, 'Guest List')}
           {link('/decisions', <GitBranch size={17} />, 'Decision tree')}
           {link('/discussions', <MessagesSquare size={17} />, 'Discussions')}
           {link('/checklist', <CheckSquare size={17} />, 'Checklist')}
           <div className="nav-label">Categories</div>
-          {state.categories.map((c) => (
+          {visibleCategories(state).map((c) => (
             <NavLink key={c.id} to={`/c/${c.id}`} className={({ isActive }) => (isActive ? 'active' : '')}>
               <span style={{ color: c.color, display: 'inline-flex' }}><CatIcon name={c.icon} size={17} /></span>
               {c.name}
@@ -82,6 +85,7 @@ export default function App() {
           <Route path="/assistant" element={<Assistant />} />
           <Route path="/budget" element={<Budget />} />
           <Route path="/timeline" element={<Timeline />} />
+          <Route path="/guests" element={<Guests />} />
           <Route path="/decisions" element={<Decisions />} />
           <Route path="/discussions" element={<Discussions />} />
           <Route path="/checklist" element={<Checklist />} />

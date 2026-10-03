@@ -7,9 +7,9 @@ import { PageHead } from '../components/ui';
 const SUGGESTIONS = [
   'Add this venue: https://… and rank it against the others',
   'Compare my top 3 venues — which is best value for 120 guests?',
-  'Our budget is $45k. Re-split the category ranges sensibly.',
+  'Add Meron to Yabi’s side of the guest list as a maybe',
+  'Which of my venues are out of the country, and what’s the cheapest one abroad?',
   'If we go earlier, which options stop working? Log it in the decision tree.',
-  'Add a proposal idea: sunrise hike with a hidden photographer',
 ];
 
 export default function Assistant() {

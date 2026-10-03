@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AppState } from '../shared/types';
 import { TOOL_DEFS, applyTool } from '../shared/tools';
-import { totals } from '../shared/logic';
+import { guestCounts, totals } from '../shared/logic';
 import { fetchUrlText } from './fetchUrl';
 
 function summarize(state: AppState): string {
@@ -13,7 +13,9 @@ function summarize(state: AppState): string {
       total_budget: state.settings.totalBudget,
       guest_count: state.settings.guestCount,
       budget_sum_target: t.target,
-      categories: state.categories.map((c) => {
+      home_country: state.settings.homeCountry,
+      guest_list: { ...guestCounts(state), people: state.guests.map((g) => ({ id: g.id, name: g.name, side: g.side, status: g.status })) },
+      categories: state.categories.filter((c) => !c.hidden).map((c) => {
         const b = state.budget.find((x) => x.categoryId === c.id);
         return {
           id: c.id,
@@ -22,7 +24,7 @@ function summarize(state: AppState): string {
           // array order == rank order
           options: state.options
             .filter((o) => o.categoryId === c.id)
-            .map((o, i) => ({ id: o.id, rank: i + 1, name: o.name, status: o.status, cost: o.cost, rating: o.rating, lead_time_months: o.leadTimeMonths, scenarios: o.scenarioIds.length ? o.scenarioIds : 'all' })),
+            .map((o, i) => ({ id: o.id, rank: i + 1, name: o.name, country: o.country || undefined, status: o.status, cost: o.cost, rating: o.rating, lead_time_months: o.leadTimeMonths, scenarios: o.scenarioIds.length ? o.scenarioIds : 'all' })),
         };
       }),
       scenarios: state.scenarios.map((s) => ({ id: s.id, name: s.name, date: s.date })),

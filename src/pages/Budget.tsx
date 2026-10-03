@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Wand2 } from 'lucide-react';
-import { estimateFor, money, totals } from '../../shared/logic';
+import { estimateFor, money, totals, visibleCategories } from '../../shared/logic';
 import { BudgetLine } from '../../shared/types';
 import { useStore } from '../store';
 import { CatIcon, NumInput, PageHead } from '../components/ui';
@@ -12,7 +12,7 @@ export default function Budget() {
   const t = totals(state, scenarioId);
   const total = state.settings.totalBudget;
   const sc = state.scenarios.find((s) => s.id === scenarioId);
-  const scale = Math.max(...state.budget.map((b) => b.max), 1);
+  const scale = Math.max(...state.budget.filter((b) => visibleCategories(state).some((c) => c.id === b.categoryId)).map((b) => b.max), 1);
 
   const setLine = (categoryId: string, patch: Partial<BudgetLine>) =>
     update((s) => ({
@@ -68,7 +68,7 @@ export default function Budget() {
       </div>
 
       <div className="card">
-        {state.budget.map((b, i) => {
+        {state.budget.filter((b) => visibleCategories(state).some((c) => c.id === b.categoryId)).map((b, i) => {
           const cat = state.categories.find((c) => c.id === b.categoryId);
           if (!cat) return null;
           const e = estimateFor(state, cat.id, scenarioId);
