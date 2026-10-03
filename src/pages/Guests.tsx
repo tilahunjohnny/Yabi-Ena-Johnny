@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { ArrowLeftRight, Check, HelpCircle, Plus, StickyNote, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ArrowLeftRight, Check, HelpCircle, Plus, StickyNote, Trash2, Upload } from 'lucide-react';
 import { guestCounts } from '../../shared/logic';
 import { Guest, GuestSide, GuestStatus, uid } from '../../shared/types';
 import { useStore } from '../store';
-import { Empty, PageHead, Seg } from '../components/ui';
+import { Empty, Field, Modal, PageHead, Seg } from '../components/ui';
+import { ImportedGuest, parseGuestSheet } from '../lib/guestImport';
 
 const GROUPS = ['Family', 'Friends', 'Work', 'Other'];
 
@@ -39,13 +40,14 @@ function Row({ g }: { g: Guest }) {
   );
 }
 
-function Side({ side, title, filter }: { side: GuestSide; title: string; filter: 'all' | GuestStatus }) {
+function Side({ side, title, filter, order }: { side: GuestSide; title: string; filter: 'all' | GuestStatus; order: 'list' | 'az' }) {
   const { state, update } = useStore();
   const [text, setText] = useState('');
   const [group, setGroup] = useState('');
   const counts = guestCounts(state)[side];
   const list = state.guests.filter((g) => g.side === side && (filter === 'all' || g.status === filter));
-  const sorted = [...list].sort((a, b) => (a.status === b.status ? a.name.localeCompare(b.name) : a.status === 'yes' ? -1 : 1));
+  // "List order" keeps people in the order they were added or imported; A–Z sorts by name.
+  const sorted = order === 'az' ? [...list].sort((a, b) => a.name.localeCompare(b.name)) : list;
 
   const add = (status: GuestStatus) => {
     // Paste a whole list: one name per line (or comma separated).
@@ -80,10 +82,83 @@ function Side({ side, title, filter }: { side: GuestSide; title: string; filter:
   );
 }
 
+function ImportDialog({ rows, onClose }: { rows: ImportedGuest[]; onClose: () => void }) {
+  const { state, update, toast } = useStore();
+  const [unsure, setUnsure] = useState<GuestStatus>('maybe'); // how "Probably" / blank statuses are treated
+  const [fallbackSide, setFallbackSide] = useState<GuestSide>('yabi');
+  const [mode, setMode] = useState<'add' | 'replace'>(state.guests.length ? 'add' : 'replace');
+
+  const resolved = rows.map((r) => ({ ...r, side: r.side ?? fallbackSide, status: (r.rawStatus === 'yes' ? 'yes' : r.rawStatus === 'maybe' ? 'maybe' : unsure) as GuestStatus }));
+  const known = new Set(mode === 'add' ? state.guests.map((g) => `${g.side}|${g.name.toLowerCase().trim()}`) : []);
+  const fresh = resolved.filter((r) => !known.has(`${r.side}|${r.name.toLowerCase()}`));
+  const skipped = resolved.length - fresh.length;
+  const side = (s: GuestSide) => ({ all: fresh.filter((r) => r.side === s), yes: fresh.filter((r) => r.side === s && r.status === 'yes').length });
+  const yabi = side('yabi'), johnny = side('johnny');
+  const unsureCount = rows.filter((r) => r.rawStatus === 'probably' || r.rawStatus === 'blank').length;
+  const noSide = rows.filter((r) => !r.side).length;
+
+  const run = () => {
+    const now = new Date().toISOString();
+    const added = fresh.map((r) => ({ id: uid('g'), name: r.name, side: r.side, status: r.status, group: r.group, notes: '', createdAt: now }));
+    update((s) => ({ ...s, guests: mode === 'replace' ? added : [...s.guests, ...added] }));
+    toast(`${added.length} guests imported`);
+    onClose();
+  };
+
+  const Block = ({ title, d }: { title: string; d: ReturnType<typeof side> }) => (
+    <div className="card flat">
+      <div className="tiny muted">{title}</div>
+      <div className="stat">{d.all.length}</div>
+      <div className="small muted">{d.yes} yes · {d.all.length - d.yes} maybe</div>
+      <div className="tiny" style={{ marginTop: 8 }}>Starts with <strong>{d.all[0]?.name ?? '—'}</strong></div>
+    </div>
+  );
+
+  return (
+    <Modal title="Import guest list" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" onClick={run} disabled={!fresh.length}>Import {fresh.length} guests</button></>}>
+      <p className="small muted" style={{ marginTop: 0 }}>Found <strong>{rows.length}</strong> people. “Bride” is placed on Yabi’s side and “Groom” on Johnny’s side. Check the split below before importing.</p>
+      <div className="grid g2" style={{ marginBottom: 14 }}><Block title="Yabi’s side" d={yabi} /><Block title="Johnny’s side" d={johnny} /></div>
+      <div className="grid g2">
+        {unsureCount > 0 && (
+          <Field label={`“Probably” or blank status (${unsureCount})`}>
+            <select value={unsure} onChange={(e) => setUnsure(e.target.value as GuestStatus)}><option value="maybe">Count as Maybe</option><option value="yes">Count as Yes</option></select>
+          </Field>
+        )}
+        {noSide > 0 && (
+          <Field label={`No side given (${noSide})`}>
+            <select value={fallbackSide} onChange={(e) => setFallbackSide(e.target.value as GuestSide)}><option value="yabi">Put on Yabi’s side</option><option value="johnny">Put on Johnny’s side</option></select>
+          </Field>
+        )}
+        <Field label="Your current list">
+          <select value={mode} onChange={(e) => setMode(e.target.value as 'add' | 'replace')}>
+            <option value="add">Keep it and add these{state.guests.length ? ` (${state.guests.length} now)` : ''}</option>
+            <option value="replace">Replace it with these</option>
+          </select>
+        </Field>
+      </div>
+      {skipped > 0 && <p className="tiny muted">{skipped} already on your list (same name and side) will be skipped.</p>}
+    </Modal>
+  );
+}
+
 export default function Guests() {
   const { state, update, toast } = useStore();
   const [filter, setFilter] = useState<'all' | GuestStatus>('all');
+  const [order, setOrder] = useState<'list' | 'az'>('list');
+  const [importRows, setImportRows] = useState<ImportedGuest[] | null>(null);
+  const [importError, setImportError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
   const c = guestCounts(state);
+  const onFile = async (f: File) => {
+    setImportError('');
+    try {
+      const rows = await parseGuestSheet(f);
+      if (!rows.length) throw new Error('No names found');
+      setImportRows(rows);
+    } catch (e: any) {
+      setImportError(`Couldn’t read that file (${e?.message || 'unknown error'}). Use an .xlsx with First Name / Last Name columns.`);
+    }
+  };
   const upper = c.yes + c.maybe;
   return (
     <div className="page">
@@ -91,8 +166,16 @@ export default function Guests() {
         eyebrow="Who’s coming"
         title="Guest list"
         subtitle="Add people to Yabi’s side or Johnny’s side, mark who’s a definite yes and who’s a maybe, and remove anyone who falls off. Move a name across sides with the arrows."
-        actions={<Seg value={filter} onChange={setFilter} options={[{ value: 'all', label: 'Everyone' }, { value: 'yes', label: 'Yes' }, { value: 'maybe', label: 'Maybe' }]} />}
+        actions={
+          <>
+            <button className="btn" onClick={() => fileRef.current?.click()}><Upload size={15} /> Import spreadsheet</button>
+            <input ref={fileRef} type="file" accept=".xlsx" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ''; }} />
+            <Seg value={order} onChange={setOrder} options={[{ value: 'list', label: 'List order' }, { value: 'az', label: 'A–Z' }]} />
+            <Seg value={filter} onChange={setFilter} options={[{ value: 'all', label: 'Everyone' }, { value: 'yes', label: 'Yes' }, { value: 'maybe', label: 'Maybe' }]} />
+          </>
+        }
       />
+      {importError && <div className="small" style={{ color: 'var(--bad)', marginBottom: 12 }}>{importError}</div>}
       <div className="grid g4" style={{ marginBottom: 22 }}>
         <div className="card"><div className="tiny muted">Definite</div><div className="stat">{c.yes}</div></div>
         <div className="card"><div className="tiny muted">Maybe</div><div className="stat">{c.maybe}</div></div>
@@ -105,9 +188,10 @@ export default function Guests() {
       </div>
       {state.guests.length === 0 && <Empty title="Start the list">Add the first few names on either side. Paste a list, one name per line, to add many at once.</Empty>}
       <div className="grid g2" style={{ alignItems: 'start', marginTop: state.guests.length ? 0 : 18 }}>
-        <Side side="yabi" title="Yabi’s side" filter={filter} />
-        <Side side="johnny" title="Johnny’s side" filter={filter} />
+        <Side side="yabi" title="Yabi’s side" filter={filter} order={order} />
+        <Side side="johnny" title="Johnny’s side" filter={filter} order={order} />
       </div>
+      {importRows && <ImportDialog rows={importRows} onClose={() => setImportRows(null)} />}
     </div>
   );
 }

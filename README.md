@@ -7,7 +7,7 @@ A private wedding-planning workspace: store, compare and rank every option, trac
 | Area | What it does |
 | --- | --- |
 | **Categories** (Venues & Locations, Honeymoon, Planner & Misc; add or restore others in Settings) | Per-category page with a **Top 3** podium, ranked list, filters, sorting, and **side-by-side compare** (up to 4). Venues carry a **country**: anything outside your home country is flagged **Abroad**, with a Where filter (All / home / Abroad / each country). Each option has cost, rating, pros/cons, status (idea → shortlist → chosen / passed), lead time, availability and **custom fields**. |
-| **Guest list** | Yabi's side and Johnny's side; add (paste many names at once), mark **Yes** or **Maybe**, move across sides, remove. Shows the headcount range. |
+| **Guest list** | Yabi's side and Johnny's side; **import an .xlsx** (Bride → Yabi, Groom → Johnny, with a preview first); add (paste many names at once), mark **Yes** or **Maybe**, move across sides, remove. Shows the headcount range. |
 | **Timelines** | Three plans to start: **A (Sep 2027)**, **B (May 2027)** and **C (Oct 2027)**; add more any time. Each has its own date, milestones and auto "book by" dates from option lead times. Options can be tied to specific scenarios, and the scenario switcher at the top re-filters the whole app (Top 3, budget estimate…). |
 | **Budget** | Min / target / max range for every category, a visual band, and a live estimate from your chosen (or #1) option vs. your total budget. |
 | **Decision tree** | Drag-and-drop canvas (decisions, options, outcomes) with labelled "if…" lines. |

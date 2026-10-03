@@ -86,13 +86,13 @@ function toV2(input: AppState): AppState {
   return s;
 }
 
-/** Version 3: recolour the seeded categories and the three plans to the soft white / beige / moss palette. */
-function toV3(s: AppState): AppState {
+
+function toColors(s: AppState): AppState {
   const catColor = new Map(CATEGORY_SEED.map((c) => [c.id, c.color]));
   const planColor = new Map(PLAN_SEED.map((p) => [p.id, p.color]));
   return {
     ...s,
-    version: 3,
+    version: 4,
     categories: s.categories.map((c) => (catColor.has(c.id) ? { ...c, color: catColor.get(c.id)! } : c)),
     scenarios: s.scenarios.map((sc) => (planColor.has(sc.id) ? { ...sc, color: planColor.get(sc.id)! } : sc)),
   };
@@ -111,6 +111,6 @@ export function migrateState(input: AppState): AppState {
   };
   const v = input.version ?? 1;
   if (v < 2) s = toV2(s);
-  if (v < 3) s = toV3(s);
+  if (v < 4) s = toColors(s);
   return s;
 }
