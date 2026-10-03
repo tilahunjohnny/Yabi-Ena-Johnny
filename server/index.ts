@@ -69,7 +69,7 @@ const IDEA_IMG_DIR = path.join(path.dirname(DB_FILE), 'ideas');
 registerIdeaRoutes(app, IDEA_IMG_DIR);
 app.use('/idea-img', express.static(IDEA_IMG_DIR, { maxAge: '30d' }));
 app.get('/api/auth/info', (_req, res) => res.json({ passwordProtected: !!process.env.APP_PASSWORD }));
-registerRingRoutes(app, gotchaPath(root), path.join(path.dirname(DB_FILE), 'ring-comments.json'));
+registerRingRoutes(app, gotchaPath(root), path.join(path.dirname(DB_FILE), 'ring-comments.json'), path.join(path.dirname(DB_FILE), 'ring-images'));
 app.use('/gotcha', express.static(gotchaPath(root), { maxAge: '7d' }));
 
 app.get('/api/state', (req, res) => {

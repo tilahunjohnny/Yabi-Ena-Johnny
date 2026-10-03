@@ -1,4 +1,4 @@
-import { AppState, Category, ChecklistItem, Milestone, Scenario, TreeEdge, TreeNode, uid } from './types';
+import { AppState, RingBrief, Category, ChecklistItem, Milestone, Scenario, TreeEdge, TreeNode, uid } from './types';
 
 /** Cream and charcoal, with a muted rust. */
 export const PALETTE = {
@@ -157,6 +157,8 @@ export function seedTree(): AppState['tree'] {
   return { nodes, edges };
 }
 
+export const blankRingBrief = (): RingBrief => ({ images: [], name: '', description: '', shape: '', carat: '', metal: '', setting: '', band: '', ringSize: '', budget: 0, needBy: '', proposalDate: '' });
+
 export function seedState(): AppState {
   const totalBudget = 40000;
   const guestCount = 120;
@@ -184,5 +186,8 @@ export function seedState(): AppState {
     checklist,
     guests: [],
     ideas: [],
+    ringBrief: blankRingBrief(),
+    ringHints: [],
+    jewelers: [],
   };
 }

@@ -147,6 +147,59 @@ export interface Ring {
   createdAt: string;
 }
 
+/** The ring being aimed for: pictures, spec and the dates that matter. Private (behind the ring password). */
+export interface RingBrief {
+  /** Saved picture paths (served only to someone who has unlocked the ring section). */
+  images: string[];
+  name: string;
+  description: string;
+  shape: string;
+  carat: string;
+  metal: string;
+  setting: string;
+  band: string;
+  ringSize: string;
+  /** What he wants to spend, in the planner currency (0 = not set). */
+  budget: number;
+  /** The day he wants the ring in hand by (ISO date, '' = none). */
+  needBy: string;
+  /** The proposal date, if known (ISO date, '' = none). */
+  proposalDate: string;
+}
+
+/** Something she has said or hinted about the ring. */
+export interface RingHint {
+  id: string;
+  kind: 'loves' | 'avoids' | 'size' | 'other';
+  text: string;
+  heardOn: string; // ISO date or ''
+}
+
+export interface RingQuote { id: string; date: string; amount: number; note: string }
+export type JewelerStatus = 'researching' | 'inquired' | 'quoted' | 'ordered' | 'ready' | 'passed';
+
+/** A place being asked about the ring, with every price it has quoted and how long it takes. */
+export interface Jeweler {
+  id: string;
+  name: string;
+  contact: string;
+  url: string;
+  location: string;
+  status: JewelerStatus;
+  inquiredOn: string;
+  /** What the quotes are for, e.g. "1.8ct oval lab diamond, 14k yellow, hidden halo". */
+  spec: string;
+  /** Every quote in the order received; the last one is the current price. */
+  quotes: RingQuote[];
+  deposit: number;
+  /** How many weeks from ordering until the ring is done. */
+  leadWeeks: number;
+  orderedOn: string;
+  quoteExpires: string;
+  notes: string;
+  createdAt: string;
+}
+
 export interface ProposalIdea {
   id: string;
   name: string;
@@ -218,6 +271,9 @@ export interface AppState {
   checklist: ChecklistItem[];
   guests: Guest[];
   ideas: Idea[];
+  ringBrief: RingBrief;
+  ringHints: RingHint[];
+  jewelers: Jeweler[];
 }
 
 export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`;

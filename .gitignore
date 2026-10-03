@@ -4,3 +4,4 @@ dist
 data/db.json
 *.log
 data/ideas/
+data/ring-images/

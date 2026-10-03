@@ -1,6 +1,6 @@
 import { AppState, BudgetLine, Category, Guest, uid } from './types';
 import { balanceToTotal } from './budget';
-import { CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
+import { blankRingBrief, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
 
 /** Shares the original template used for the budget, to tell untouched defaults from edits. */
 const OLD_SHARES: Record<string, number> = {
@@ -150,6 +150,9 @@ export function migrateState(input: AppState): AppState {
     settings: { ...input.settings, homeCountry: input.settings.homeCountry ?? 'United States' },
     guests: input.guests ?? [],
     ideas: input.ideas ?? [],
+    ringBrief: { ...blankRingBrief(), ...(input.ringBrief ?? {}) },
+    ringHints: input.ringHints ?? [],
+    jewelers: (input.jewelers ?? []).map((j) => ({ ...j, quotes: j.quotes ?? [] })),
     options: (input.options ?? []).map((o) => ({ ...o, country: o.country ?? '', tiers: o.tiers ?? [], tierId: o.tierId ?? '' })),
   };
   const v = input.version ?? 1;

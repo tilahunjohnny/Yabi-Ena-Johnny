@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Lock, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Lock, MapPin, Scale, Store, UserRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ChecklistItem, ProposalIdea, Ring, Status, uid } from '../../shared/types';
 import { money } from '../../shared/logic';
 import { useStore } from '../store';
 import { loadGotcha } from '../lib/gotcha';
+import { Compare, HerDetails, Jewelers, RingDashboard, useJewelerEditor } from '../components/RingDesk';
 import { Empty, Field, Modal, NumInput, PageHead, Seg, Stars, StatusPill, STATUSES, STATUS_LABEL } from '../components/ui';
 
 function move<T>(arr: T[], idx: number, dir: -1 | 1 | 'top'): T[] {
@@ -211,7 +212,8 @@ function OwnerComments() {
 
 function RingContent() {
   const { state, update, lockRing } = useStore();
-  const [tab, setTab] = useState<'rings' | 'where' | 'prep'>('rings');
+  const [tab, setTab] = useState<'details' | 'jewelers' | 'compare' | 'rings' | 'where' | 'prep'>('jewelers');
+  const jw = useJewelerEditor();
   const [ring, setRing] = useState<{ r: Ring; isNew: boolean } | null>(null);
   const [idea, setIdea] = useState<{ p: ProposalIdea; isNew: boolean } | null>(null);
   const [todo, setTodo] = useState('');
@@ -233,14 +235,20 @@ function RingContent() {
         actions={
           <>
             <button className="btn ghost" onClick={() => lockRing()} title="Lock this section"><Lock size={15} /> Lock</button>
+            {tab === 'jewelers' && <button className="btn primary" onClick={jw.openNew}><Plus size={16} /> Add jeweler</button>}
             {tab === 'rings' && <button className="btn primary" onClick={() => setRing({ r: blankRing(), isNew: true })}><Plus size={16} /> Add ring</button>}
             {tab === 'where' && <button className="btn primary" onClick={() => setIdea({ p: blankIdea(), isNew: true })}><Plus size={16} /> Add idea</button>}
           </>
         }
       />
-      <div style={{ marginBottom: 20 }}>
-        <Seg value={tab} onChange={setTab} options={[{ value: 'rings', label: <><Gem size={14} /> Rings · {state.rings.length}</> }, { value: 'where', label: <><MapPin size={14} /> Where to propose · {state.proposals.length}</> }, { value: 'prep', label: `Prep list · ${prepDone}/${state.proposalChecklist.length}` }]} />
+      <RingDashboard />
+      <div style={{ marginBottom: 20, overflowX: 'auto' }}>
+        <Seg value={tab} onChange={setTab} options={[{ value: 'jewelers', label: <><Store size={14} /> Jewelers · {state.jewelers.length}</> }, { value: 'compare', label: <><Scale size={14} /> Compare &amp; timeline</> }, { value: 'details', label: <><UserRound size={14} /> Her details</> }, { value: 'rings', label: <><Gem size={14} /> Other rings I like · {state.rings.length}</> }, { value: 'where', label: <><MapPin size={14} /> Where to propose · {state.proposals.length}</> }, { value: 'prep', label: `Prep list · ${prepDone}/${state.proposalChecklist.length}` }]} />
       </div>
+
+      {tab === 'jewelers' && <Jewelers editor={jw} />}
+      {tab === 'compare' && <Compare editor={jw} />}
+      {tab === 'details' && <HerDetails />}
 
       {tab === 'rings' && (
         <>
@@ -325,6 +333,7 @@ function RingContent() {
 
       <OwnerComments />
 
+      {jw.modal}
       {ring && <RingModal key={ring.r.id} initial={ring.r} isNew={ring.isNew} onClose={() => setRing(null)} />}
       {idea && <IdeaModal key={idea.p.id} initial={idea.p} isNew={idea.isNew} onClose={() => setIdea(null)} />}
     </div>

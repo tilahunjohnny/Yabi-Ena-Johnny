@@ -271,3 +271,25 @@ input.slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px var(--a
 .idea-note { margin: 8px 0 0; white-space: pre-wrap; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
 .idea-thumb { aspect-ratio: 4 / 3; border-radius: 12px; background: var(--surface2); border: 1px dashed var(--border); display: grid; place-items: center; overflow: hidden; }
 .idea-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Ring desk */
+.ring-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; margin-bottom: 22px; }
+.ring-gallery .main { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: hidden; background: var(--surface-2, var(--accent-soft)); border: 1px solid var(--border); display: grid; place-items: center; }
+.ring-gallery .main img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ring-gallery .main .del { position: absolute; top: 8px; right: 8px; }
+.ring-thumbs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.ring-thumbs button { width: 64px; height: 64px; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid transparent; background: none; cursor: pointer; }
+.ring-thumbs button.on { border-color: var(--accent); }
+.ring-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ring-thumbs .add { display: grid; place-items: center; border: 1.5px dashed var(--border); color: var(--muted); }
+.ring-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px 16px; margin-top: 14px; }
+.ring-facts dt { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.ring-facts dd { margin: 2px 0 0; font-size: 14px; }
+.ring-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+.ring-stats .s { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; }
+.ring-stats .s b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.35rem; }
+.tl { position: relative; height: 10px; border-radius: 99px; background: var(--border); margin: 6px 0 2px; }
+.tl i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 99px; background: var(--accent); }
+.tl .mark { position: absolute; top: -4px; width: 2px; height: 18px; background: var(--text); }
+.good-t { color: var(--good); } .bad-t { color: var(--bad); }
+@media (max-width: 900px) { .ring-hero { grid-template-columns: 1fr; } }
