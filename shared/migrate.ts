@@ -92,7 +92,7 @@ function toColors(s: AppState): AppState {
   const planColor = new Map(PLAN_SEED.map((p) => [p.id, p.color]));
   return {
     ...s,
-    version: 5,
+    version: 6,
     categories: s.categories.map((c) => (catColor.has(c.id) ? { ...c, color: catColor.get(c.id)! } : c)),
     scenarios: s.scenarios.map((sc) => (planColor.has(sc.id) ? { ...sc, color: planColor.get(sc.id)! } : sc)),
   };
@@ -111,6 +111,6 @@ export function migrateState(input: AppState): AppState {
   };
   const v = input.version ?? 1;
   if (v < 2) s = toV2(s);
-  if (v < 5) s = toColors(s);
+  if (v < 6) s = toColors(s);
   return s;
 }

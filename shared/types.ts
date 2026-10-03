@@ -59,6 +59,8 @@ export interface BudgetLine {
   min: number;
   target: number;
   max: number;
+  /** Locked lines keep their target when other sliders rebalance. */
+  locked?: boolean;
 }
 
 export interface Settings {

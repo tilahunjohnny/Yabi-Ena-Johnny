@@ -8,8 +8,8 @@ export const PALETTE = {
 
 export const CATEGORY_SEED: Array<Category & { share: number }> = [
   { id: 'venue', name: 'Wedding Venues & Locations', icon: 'landmark', color: PALETTE.rust, kind: 'vendor', share: 0.7, description: 'Where we say I do. Catering, bar and most extras are usually included, so this one carries most of the budget. Venues can be here or abroad.' },
-  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.taupe, kind: 'vendor', share: 0.15, description: 'Where we go after.' },
-  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: PALETTE.taupe, kind: 'vendor', share: 0.1, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
+  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.clay, kind: 'vendor', share: 0.15, description: 'Where we go after.' },
+  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: PALETTE.slate, kind: 'vendor', share: 0.1, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
   // Hidden for now (data is kept; restore them in Settings if they come back).
   { id: 'catering', name: 'Catering & Bar', icon: 'utensils', color: PALETTE.clay, kind: 'vendor', share: 0, hidden: true, description: 'Food, drinks, service style.' },
   { id: 'photo', name: 'Photo & Video', icon: 'camera', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Photographers, videographers, albums.' },
@@ -168,7 +168,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 5,
+    version: 6,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],
