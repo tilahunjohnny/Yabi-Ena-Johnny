@@ -6,6 +6,7 @@ import { AppState } from '../shared/types';
 import { seedState } from '../shared/seed';
 import { runChat } from './chat';
 import { authMiddleware } from './auth';
+import { gotchaPath, mergeSecrets, registerRingRoutes, ringUnlocked, stripSecrets } from './ring';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -49,12 +50,18 @@ app.get('/healthz', (_req, res) => res.send('ok'));
 app.use(authMiddleware(process.env.APP_PASSWORD));
 if (!process.env.APP_PASSWORD) console.warn('WARNING: APP_PASSWORD is not set — anyone who can reach this server can edit your planner.');
 
-app.get('/api/state', (_req, res) => res.json({ rev, state: current }));
+registerRingRoutes(app, gotchaPath(root));
+app.use('/gotcha', express.static(gotchaPath(root), { maxAge: '7d' }));
+
+app.get('/api/state', (req, res) => {
+  const unlocked = ringUnlocked(req);
+  res.json({ rev, ringUnlocked: unlocked, state: unlocked ? current : stripSecrets(current) });
+});
 app.get('/api/rev', (_req, res) => res.json({ rev }));
 app.put('/api/state', (req, res) => {
   const state = req.body?.state as AppState | undefined;
   if (!state || !Array.isArray(state.options) || !state.settings) return res.status(400).json({ error: 'Invalid state' });
-  current = state;
+  current = mergeSecrets(state, current, ringUnlocked(req));
   save(current);
   res.json({ rev });
 });
@@ -69,11 +76,12 @@ app.post('/api/chat', async (req, res) => {
   if (!messages?.length) return res.status(400).json({ error: 'No messages' });
   try {
     // The client's state is authoritative (it may hold edits not yet synced).
-    if (req.body.state) current = req.body.state as AppState;
-    const { reply, state, actions } = await runChat(current, messages);
-    current = state;
+    const unlocked = ringUnlocked(req);
+    if (req.body.state) current = mergeSecrets(req.body.state as AppState, current, unlocked);
+    const { reply, state, actions } = await runChat(unlocked ? current : stripSecrets(current), messages, unlocked);
+    current = mergeSecrets(state, current, unlocked);
     save(current);
-    res.json({ reply, actions, state: current, rev });
+    res.json({ reply, actions, state: unlocked ? current : stripSecrets(current), rev });
   } catch (e: any) {
     console.error(e);
     res.status(500).json({ error: e?.message || 'Chat failed' });

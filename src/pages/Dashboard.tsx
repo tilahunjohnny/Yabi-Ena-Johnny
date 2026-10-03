@@ -5,7 +5,7 @@ import { useStore } from '../store';
 import { CatIcon, fmtDate, PageHead, Stars } from '../components/ui';
 
 export default function Dashboard() {
-  const { state, scenarioId } = useStore();
+  const { state, scenarioId, ringUnlocked } = useStore();
   const cur = state.settings.currency;
   const t = totals(state, scenarioId);
   const scenarios = scenarioId === 'all' ? state.scenarios : state.scenarios.filter((s) => s.id === scenarioId);
@@ -82,7 +82,7 @@ export default function Dashboard() {
         </Link>
         <Link to="/ring" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
           <Gem size={20} color="var(--accent)" /><h3 style={{ margin: '10px 0 4px' }}>Ring & proposal</h3>
-          <div className="small muted">{state.rings.length} rings · {state.proposals.length} proposal ideas tracked.</div>
+          <div className="small muted">{ringUnlocked ? `${state.rings.length} rings · ${state.proposals.length} proposal ideas tracked.` : '🔒 Private — password required.'}</div>
         </Link>
       </div>
     </div>

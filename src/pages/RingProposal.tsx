@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Lock, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ChecklistItem, ProposalIdea, Ring, Status, uid } from '../../shared/types';
 import { money } from '../../shared/logic';
 import { useStore } from '../store';
@@ -71,8 +71,72 @@ function IdeaModal({ initial, isNew, onClose }: { initial: ProposalIdea; isNew: 
   );
 }
 
+function RingGate() {
+  const { unlockRing } = useStore();
+  const [pw, setPw] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [caught, setCaught] = useState<string | null>(null);
+  const [noPics, setNoPics] = useState(false);
+  const [misses, setMisses] = useState(0);
+  const [tilt, setTilt] = useState(0);
+  const deck = useRef<string[]>([]);
+  const [configured, setConfigured] = useState(true);
+
+  useEffect(() => { fetch('/api/ring/status').then((r) => r.json()).then((d) => setConfigured(!!d.configured)).catch(() => {}); }, []);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pw || busy) return;
+    setBusy(true);
+    const ok = await unlockRing(pw).catch(() => false);
+    setBusy(false);
+    if (ok) return;
+    setPw('');
+    setMisses((m) => m + 1);
+    try {
+      const { images } = (await (await fetch('/api/ring/gotcha')).json()) as { images: string[] };
+      setNoPics(images.length === 0);
+      // Shuffle-bag: show every picture once before any repeats (and never the same one twice in a row).
+      if (deck.current.length === 0) {
+        const last = caught;
+        deck.current = [...images].sort(() => Math.random() - 0.5);
+        if (deck.current.length > 1 && deck.current[deck.current.length - 1] === last) deck.current.unshift(deck.current.pop()!);
+      }
+      setTilt(Math.round((Math.random() * 10 - 5) * 10) / 10);
+      setCaught(deck.current.length ? deck.current.pop()! : '');
+    } catch { setNoPics(true); setCaught(''); }
+  };
+
+  return (
+    <div className="page" style={{ maxWidth: 520 }}>
+      <div className="card" style={{ textAlign: 'center', padding: 32, marginTop: 30 }}>
+        <Lock size={30} color="var(--accent)" />
+        <h2 style={{ margin: '12px 0 4px' }}>This part is private</h2>
+        <p className="muted small" style={{ margin: '0 0 18px' }}>Enter the password to continue.</p>
+        <form onSubmit={submit} className="col">
+          <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" aria-label="Password" />
+          <button className="btn primary" type="submit" disabled={busy || !pw} style={{ justifyContent: 'center' }}>{busy ? 'Checking…' : 'Unlock'}</button>
+        </form>
+        {!configured && <p className="small" style={{ color: 'var(--warn)', marginTop: 14 }}>No ring password has been set on the server yet (RING_PASSWORD), so this section can’t be opened.</p>}
+        {caught !== null && (
+          <div className="gotcha" key={misses} style={{ ['--tilt' as any]: `${tilt}deg` }}>
+            {caught ? <img src={caught} alt="" onError={() => setNoPics(true)} /> : null}
+            {(noPics || !caught) && <div className="gotcha-emoji">🙈😏</div>}
+            <div className="gotcha-text">HAHA You thought!</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function RingProposal() {
-  const { state, update } = useStore();
+  const { ringUnlocked } = useStore();
+  return ringUnlocked ? <RingContent /> : <RingGate />;
+}
+
+function RingContent() {
+  const { state, update, lockRing } = useStore();
   const [tab, setTab] = useState<'rings' | 'where' | 'prep'>('rings');
   const [ring, setRing] = useState<{ r: Ring; isNew: boolean } | null>(null);
   const [idea, setIdea] = useState<{ p: ProposalIdea; isNew: boolean } | null>(null);
@@ -93,8 +157,11 @@ export default function RingProposal() {
         title="Ring & Proposal"
         subtitle="Collect rings from different vendors, keep your top choice, and brainstorm the perfect place and moment to ask."
         actions={
-          tab === 'rings' ? <button className="btn primary" onClick={() => setRing({ r: blankRing(), isNew: true })}><Plus size={16} /> Add ring</button>
-          : tab === 'where' ? <button className="btn primary" onClick={() => setIdea({ p: blankIdea(), isNew: true })}><Plus size={16} /> Add idea</button> : undefined
+          <>
+            <button className="btn ghost" onClick={() => lockRing()} title="Lock this section"><Lock size={15} /> Lock</button>
+            {tab === 'rings' && <button className="btn primary" onClick={() => setRing({ r: blankRing(), isNew: true })}><Plus size={16} /> Add ring</button>}
+            {tab === 'where' && <button className="btn primary" onClick={() => setIdea({ p: blankIdea(), isNew: true })}><Plus size={16} /> Add idea</button>}
+          </>
         }
       />
       <div style={{ marginBottom: 20 }}>

@@ -48,7 +48,9 @@ Rules:
 Current planner data (JSON):
 `;
 
-export async function runChat(initial: AppState, history: Array<{ role: 'user' | 'assistant'; content: string }>) {
+const RING_TOOLS = new Set(['add_ring', 'update_ring', 'add_proposal_idea']);
+
+export async function runChat(initial: AppState, history: Array<{ role: 'user' | 'assistant'; content: string }>, ringUnlocked = false) {
   const client = new Anthropic();
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
   let state = initial;
@@ -60,8 +62,8 @@ export async function runChat(initial: AppState, history: Array<{ role: 'user' |
     const res = await client.messages.create({
       model,
       max_tokens: 2048,
-      system: SYSTEM + summarize(state),
-      tools: TOOL_DEFS as unknown as Anthropic.Tool[],
+      system: SYSTEM + (ringUnlocked ? '' : '\n(The private ring & proposal section is locked in this session: do not discuss or create rings or proposal ideas.)\n') + summarize(state),
+      tools: (ringUnlocked ? TOOL_DEFS : TOOL_DEFS.filter((t) => !RING_TOOLS.has(t.name))) as unknown as Anthropic.Tool[],
       messages,
     });
     const text = res.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map((b) => b.text).join('\n').trim();
@@ -81,6 +83,10 @@ export async function runChat(initial: AppState, history: Array<{ role: 'user' |
         } catch (e: any) {
           results.push({ type: 'tool_result', tool_use_id: block.id, content: `Could not fetch: ${e.message}`, is_error: true });
         }
+        continue;
+      }
+      if (!ringUnlocked && RING_TOOLS.has(block.name)) {
+        results.push({ type: 'tool_result', tool_use_id: block.id, content: 'That section is locked.', is_error: true });
         continue;
       }
       const r = applyTool(state, block.name, input);

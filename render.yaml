@@ -7,6 +7,8 @@ services:
     envVars:
       - key: APP_PASSWORD
         sync: false        # you'll be prompted to enter this
+      - key: RING_PASSWORD
+        sync: false        # separate password for the private Ring & Proposal section
       - key: ANTHROPIC_API_KEY
         sync: false
     disk:

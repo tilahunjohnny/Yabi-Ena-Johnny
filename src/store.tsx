@@ -15,6 +15,9 @@ interface Store {
   toggleTheme: () => void;
   toast: (msg: string) => void;
   toastMsg: string;
+  ringUnlocked: boolean;
+  unlockRing: (password: string) => Promise<boolean>;
+  lockRing: () => Promise<void>;
 }
 
 const Ctx = createContext<Store>(null as unknown as Store);
@@ -41,6 +44,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const [toastMsg, setToastMsg] = useState('');
+  const [ringUnlocked, setRingUnlocked] = useState(false);
   const version = useRef(0);
   const savedVersion = useRef(0);
   const serverRev = useRef(0);
@@ -58,6 +62,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .then((d) => {
         serverRev.current = d.rev;
         online.current = true;
+        setRingUnlocked(!!d.ringUnlocked);
         setState(d.state);
         setSync('saved');
       })
@@ -102,6 +107,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (rev > serverRev.current) {
           const d = await (await fetch('/api/state')).json();
           serverRev.current = d.rev;
+          setRingUnlocked(!!d.ringUnlocked);
           replace(d.state);
         }
       } catch { /* offline */ }
@@ -109,6 +115,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [replace]);
+
+  const reloadFromServer = useCallback(async () => {
+    const d = await (await fetch('/api/state')).json();
+    serverRev.current = d.rev;
+    setRingUnlocked(!!d.ringUnlocked);
+    replace(d.state);
+  }, [replace]);
+
+  const unlockRing = useCallback(async (password: string) => {
+    const res = await fetch('/api/ring/unlock', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password }) });
+    if (!res.ok) return false;
+    await reloadFromServer();
+    return true;
+  }, [reloadFromServer]);
+
+  const lockRing = useCallback(async () => {
+    await fetch('/api/ring/lock', { method: 'POST' });
+    await reloadFromServer(); // replaces the in-memory and cached copy with the stripped one
+  }, [reloadFromServer]);
 
   const setScenarioId = (id: string) => {
     setScenarioIdRaw(id);
@@ -123,7 +148,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const activeScenario = scenarioId === 'all' || state.scenarios.some((s) => s.id === scenarioId) ? scenarioId : 'all';
 
   return (
-    <Ctx.Provider value={{ state, update, replace, scenarioId: activeScenario, setScenarioId, sync, theme, toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), toast, toastMsg }}>
+    <Ctx.Provider value={{ state, update, replace, scenarioId: activeScenario, setScenarioId, sync, theme, toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), toast, toastMsg, ringUnlocked, unlockRing, lockRing }}>
       {children}
     </Ctx.Provider>
   );
