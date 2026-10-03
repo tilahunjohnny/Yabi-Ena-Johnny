@@ -159,6 +159,12 @@ export function seedTree(): AppState['tree'] {
 
 export const blankRingBrief = (): RingBrief => ({ images: [], name: '', description: '', shape: '', carat: '', stone: '', color: '', clarity: '', metal: '', setting: '', band: '', details: '', ringSize: '', budget: 0, needBy: '', proposalDate: '' });
 
+/** The first place being asked. No price or turnaround yet: those come from the jeweler. */
+export const FIRST_JEWELER = {
+  name: 'Roen', location: 'New York, NY', url: 'https://roen.nyc/collections/roen-engagement-rings/products/helen-milgrain-solitaire',
+  spec: 'Helen Milgrain Solitaire', notes: 'Best option so far. Milgrain solitaire; ask about cushion 2.8–3 ct, D–F, VVS1–VVS2 lab diamond, a floral basket setting, price and turnaround.',
+};
+
 /** What she has asked for so far. Filled in once, only into fields that are still empty. */
 export const HER_RING: Partial<RingBrief> = {
   description: 'Cushion-cut lab diamond in a floral basket setting with milgrain edges.',
@@ -178,7 +184,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 8,
+    version: 9,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],

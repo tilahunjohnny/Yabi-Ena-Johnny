@@ -1,6 +1,6 @@
 import { AppState, BudgetLine, Category, Guest, uid } from './types';
 import { balanceToTotal } from './budget';
-import { blankRingBrief, HER_RING, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
+import { blankRingBrief, HER_RING, FIRST_JEWELER, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
 
 /** Shares the original template used for the budget, to tell untouched defaults from edits. */
 const OLD_SHARES: Record<string, number> = {
@@ -164,6 +164,10 @@ export function migrateState(input: AppState): AppState {
     const brief: Record<string, unknown> = { ...s.ringBrief };
     for (const [k, val] of Object.entries(HER_RING)) if (!brief[k]) brief[k] = val;
     s = { ...s, version: 8, ringBrief: brief as unknown as AppState['ringBrief'] };
+  }
+  if (v < 9) {
+    const has = s.jewelers.some((j) => j.url === FIRST_JEWELER.url);
+    s = { ...s, version: 9, jewelers: has ? s.jewelers : [...s.jewelers, { id: uid('jwl'), contact: '', status: 'researching', inquiredOn: '', quotes: [], deposit: 0, leadWeeks: 0, orderedOn: '', quoteExpires: '', createdAt: new Date().toISOString(), ...FIRST_JEWELER }] };
   }
   return s;
 }
