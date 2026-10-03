@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: yabi-ena-johnny
+    runtime: docker
+    plan: starter          # persistent disks need a paid plan
+    healthCheckPath: /healthz
+    envVars:
+      - key: APP_PASSWORD
+        sync: false        # you'll be prompted to enter this
+      - key: ANTHROPIC_API_KEY
+        sync: false
+    disk:
+      name: planner-data
+      mountPath: /data
+      sizeGB: 1

@@ -5,10 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { AppState } from '../shared/types';
 import { seedState } from '../shared/seed';
 import { runChat } from './chat';
+import { authMiddleware } from './auth';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const DB_FILE = path.join(root, 'data', 'db.json');
+const DB_FILE = process.env.DATA_FILE || path.join(root, 'data', 'db.json');
 
 // Minimal .env loader so no extra dependency is needed.
 try {
@@ -41,7 +42,12 @@ function save(state: AppState) {
 let current = load();
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false }));
+app.get('/healthz', (_req, res) => res.send('ok'));
+app.use(authMiddleware(process.env.APP_PASSWORD));
+if (!process.env.APP_PASSWORD) console.warn('WARNING: APP_PASSWORD is not set — anyone who can reach this server can edit your planner.');
 
 app.get('/api/state', (_req, res) => res.json({ rev, state: current }));
 app.get('/api/rev', (_req, res) => res.json({ rev }));
