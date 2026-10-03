@@ -6,8 +6,8 @@
   --shadow: 0 1px 2px rgba(42, 38, 25, 0.05), 0 8px 24px rgba(42, 38, 25, 0.07);
   --radius: 16px;
   --tint-mix: 62%; /* how much of a data colour survives when blended toward the text colour */
-  --serif: 'Marcellus', Georgia, serif;
-  --sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --serif: 'Marcellus', 'Noto Sans Ethiopic', Georgia, serif;
+  --sans: 'DM Sans', 'Noto Sans Ethiopic', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 :root[data-theme='dark'] {
   --bg: #1F1E1A; --surface: #2A2924; --surface2: #34322C; --border: #46433A; --text: #F1EDE0; --muted: #A8A390;

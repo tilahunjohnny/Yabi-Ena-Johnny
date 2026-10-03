@@ -142,8 +142,8 @@ function RingGate() {
   const card = (
     <div key="gate" className={`card gate-card ${misses ? 'shake' : ''}`} data-miss={misses}>
       <Lock size={28} color="var(--accent)" />
-      <h2 style={{ margin: '10px 0 4px' }}>This part is private</h2>
-      <p className="muted small" style={{ margin: '0 0 14px' }}>Enter the password to continue.</p>
+      <h2 style={{ margin: '10px 0 4px' }}>አንቺ ወሬኛ 😜</h2>
+      <p className="muted small" style={{ margin: '0 0 14px' }}>Love ya pookie 😉</p>
       <form onSubmit={submit} className="col">
         <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" aria-label="Password" />
         <button className="btn primary" type="submit" disabled={busy || !pw} style={{ justifyContent: 'center' }}>{busy ? 'Checking…' : 'Unlock'}</button>
