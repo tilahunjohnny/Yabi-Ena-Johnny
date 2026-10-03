@@ -58,16 +58,24 @@ export async function runChat(initial: AppState, history: Array<{ role: 'user' |
   const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }));
   let reply = '';
 
+  // Built ONCE per request and reused verbatim on every step of the tool loop. The model's reasoning blocks are
+  // bound to the exact system prompt they were produced under, so changing it mid-loop (e.g. re-summarising the
+  // planner after a tool edits it) makes the API reject the replayed blocks. Later changes reach the model
+  // through the tool results instead.
+  const system = SYSTEM + (ringUnlocked ? '' : '\n(The private ring & proposal section is locked in this session: do not discuss or create rings or proposal ideas.)\n') + summarize(initial);
+  const tools = (ringUnlocked ? TOOL_DEFS : TOOL_DEFS.filter((t) => !RING_TOOLS.has(t.name))) as unknown as Anthropic.Tool[];
+
   for (let turn = 0; turn < 10; turn++) {
     const res = await client.messages.create({
       model,
-      max_tokens: 2048,
-      system: SYSTEM + (ringUnlocked ? '' : '\n(The private ring & proposal section is locked in this session: do not discuss or create rings or proposal ideas.)\n') + summarize(state),
-      tools: (ringUnlocked ? TOOL_DEFS : TOOL_DEFS.filter((t) => !RING_TOOLS.has(t.name))) as unknown as Anthropic.Tool[],
+      max_tokens: 16000, // reasoning tokens count toward this limit
+      system,
+      tools,
       messages,
     });
     const text = res.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map((b) => b.text).join('\n').trim();
     if (text) reply = text;
+    if (res.stop_reason === 'refusal') { reply = reply || 'Sorry, I can’t help with that request.'; break; }
     if (res.stop_reason !== 'tool_use') break;
 
     messages.push({ role: 'assistant', content: res.content });
