@@ -5,7 +5,7 @@ import { addMonths, SCENARIO_COLORS } from '../../shared/seed';
 import { money, monthsBetween, today, top3, totals, visibleCategories } from '../../shared/logic';
 import { Scenario, uid } from '../../shared/types';
 import { useStore } from '../store';
-import { Field, fmtDate, PageHead } from '../components/ui';
+import { Field, fmtDate, PageHead, tint } from '../components/ui';
 
 interface Item { key: string; title: string; date: string; done?: boolean; categoryId: string; kind: 'milestone' | 'booking'; msId?: string; cost?: number }
 
@@ -65,7 +65,7 @@ export default function Timeline() {
                 const done = s.milestones.filter((x) => x.done).length;
                 return (
                   <tr key={s.id} style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: '10px' }}><span style={{ color: s.color }}>●</span> <strong>{s.name}</strong></td>
+                    <td style={{ padding: '10px' }}><span style={{ color: tint(s.color) }}>●</span> <strong>{s.name}</strong></td>
                     <td style={{ padding: '10px' }}>{fmtDate(s.date)}</td>
                     <td style={{ padding: '10px' }}>{m.toFixed(1)} mo</td>
                     <td style={{ padding: '10px' }}>{money(totals(state, s.id).estimate, cur)}</td>

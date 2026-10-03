@@ -3,7 +3,7 @@ import { Wand2 } from 'lucide-react';
 import { estimateFor, money, totals, visibleCategories } from '../../shared/logic';
 import { BudgetLine } from '../../shared/types';
 import { useStore } from '../store';
-import { CatIcon, NumInput, PageHead } from '../components/ui';
+import { CatIcon, NumInput, PageHead, tint } from '../components/ui';
 import { RangeBar } from '../components/RangeBar';
 
 export default function Budget() {
@@ -76,7 +76,7 @@ export default function Budget() {
             <div key={b.categoryId} style={{ padding: '16px 0', borderTop: i ? '1px solid var(--border)' : undefined }}>
               <div className="row between wrap" style={{ gap: 14 }}>
                 <Link to={`/c/${cat.id}`} className="row" style={{ gap: 10, color: 'inherit', minWidth: 220 }}>
-                  <span style={{ color: cat.color }}><CatIcon name={cat.icon} /></span>
+                  <span style={{ color: tint(cat.color) }}><CatIcon name={cat.icon} /></span>
                   <div><strong>{cat.name}</strong><div className="tiny muted">{e.option ? `${e.locked ? '✓ ' : ''}${e.option.name} · ${money(e.cost, cur)}` : 'no pick yet'}</div></div>
                 </Link>
                 <div className="row wrap" style={{ gap: 14 }}>

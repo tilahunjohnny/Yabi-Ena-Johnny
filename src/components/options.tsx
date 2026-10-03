@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Pencil, Plus, Trash2, Clo
 import { Category, Option, Status, uid } from '../../shared/types';
 import { isAbroad, moveOption, money } from '../../shared/logic';
 import { useStore } from '../store';
-import { Field, Modal, NumInput, Stars, StatusPill, STATUSES, STATUS_LABEL } from './ui';
+import { Field, Modal, NumInput, Stars, StatusPill, STATUSES, STATUS_LABEL, tint } from './ui';
 
 export const COUNTRIES = ['United States', 'Canada', 'Mexico', 'Dominican Republic', 'Jamaica', 'Bahamas', 'Costa Rica', 'United Kingdom', 'Ireland', 'France', 'Italy', 'Spain', 'Portugal', 'Greece', 'Croatia', 'Turkey', 'Morocco', 'Egypt', 'Ethiopia', 'Eritrea', 'Kenya', 'Tanzania', 'Rwanda', 'South Africa', 'Ghana', 'Japan', 'Thailand', 'Indonesia', 'Maldives', 'United Arab Emirates'];
 
@@ -116,7 +116,7 @@ export function OptionCard({
           <strong style={{ fontSize: 15.5 }}>{option.name}</strong>
           <StatusPill status={option.status} />
           {isAbroad(option, state.settings.homeCountry) && <span className="pill abroad">✈ Abroad</span>}
-          {scs.map((s) => <span key={s!.id} className="pill" style={{ color: s!.color }}>● {s!.name}</span>)}
+          {scs.map((s) => <span key={s!.id} className="pill" style={{ color: tint(s!.color) }}>● {s!.name}</span>)}
         </div>
         <div className="row wrap small muted" style={{ gap: 14, marginTop: 4 }}>
           {option.vendor && <span>{option.vendor}</span>}

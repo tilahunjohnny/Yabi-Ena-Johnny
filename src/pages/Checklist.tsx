@@ -3,7 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { uid } from '../../shared/types';
 import { visibleCategories } from '../../shared/logic';
 import { useStore } from '../store';
-import { CatIcon, PageHead, Seg } from '../components/ui';
+import { CatIcon, PageHead, Seg, tint } from '../components/ui';
 
 export default function Checklist() {
   const { state, update } = useStore();
@@ -33,7 +33,7 @@ export default function Checklist() {
           return (
             <div key={c.id} className="card flat">
               <div className="row" style={{ gap: 10, marginBottom: 6 }}>
-                <span style={{ color: c.color }}><CatIcon name={c.icon} /></span><h3>{c.name}</h3>
+                <span style={{ color: tint(c.color) }}><CatIcon name={c.icon} /></span><h3>{c.name}</h3>
                 <span className="tiny muted" style={{ marginLeft: 'auto' }}>{state.checklist.filter((i) => i.categoryId === c.id && i.done).length}/{state.checklist.filter((i) => i.categoryId === c.id).length}</span>
               </div>
               {items.map((i) => (

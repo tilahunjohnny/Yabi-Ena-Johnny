@@ -1,35 +1,35 @@
 import { AppState, Category, ChecklistItem, Milestone, Scenario, TreeEdge, TreeNode, uid } from './types';
 
-/** Japandi palette. */
+/** Soft white, beige and moss green. */
 export const PALETTE = {
-  softWhite: '#F2EEE9', beige: '#E0C9A8', natural: '#D6BDA0', taupe: '#8C786A',
-  moss: '#585A38', softBlack: '#262626', terracotta: '#9C4A2C', walnut: '#5A3824',
+  softWhite: '#F6F3EE', beige: '#E2D6C0', beigeDeep: '#B59A72', tan: '#A8895C',
+  moss: '#5E6B3B', mossDeep: '#3F4A28', sage: '#8D9B66', softBlack: '#2A2926',
 };
 
 export const CATEGORY_SEED: Array<Category & { share: number }> = [
-  { id: 'venue', name: 'Wedding Venues & Locations', icon: 'landmark', color: PALETTE.terracotta, kind: 'vendor', share: 0.7, description: 'Where we say I do. Catering, bar and most extras are usually included, so this one carries most of the budget. Venues can be here or abroad.' },
-  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.walnut, kind: 'vendor', share: 0.15, description: 'Where we go after.' },
-  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: PALETTE.taupe, kind: 'vendor', share: 0.1, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
+  { id: 'venue', name: 'Wedding Venues & Locations', icon: 'landmark', color: PALETTE.moss, kind: 'vendor', share: 0.7, description: 'Where we say I do. Catering, bar and most extras are usually included, so this one carries most of the budget. Venues can be here or abroad.' },
+  { id: 'honeymoon', name: 'Honeymoon', icon: 'plane', color: PALETTE.sage, kind: 'vendor', share: 0.15, description: 'Where we go after.' },
+  { id: 'planner', name: 'Planner & Misc', icon: 'sparkles', color: PALETTE.beigeDeep, kind: 'vendor', share: 0.1, description: 'Planner, insurance, favors, tips, contingency, digital invitations.' },
   // Hidden for now (data is kept; restore them in Settings if they come back).
-  { id: 'catering', name: 'Catering & Bar', icon: 'utensils', color: PALETTE.natural, kind: 'vendor', share: 0, hidden: true, description: 'Food, drinks, service style.' },
-  { id: 'photo', name: 'Photo & Video', icon: 'camera', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Photographers, videographers, albums.' },
-  { id: 'attire', name: 'Attire & Beauty', icon: 'shirt', color: PALETTE.walnut, kind: 'vendor', share: 0, hidden: true, description: 'Dress, suit, tailoring, hair & makeup.' },
-  { id: 'music', name: 'Music & Entertainment', icon: 'music', color: PALETTE.moss, kind: 'vendor', share: 0, hidden: true, description: 'DJ, band, ceremony musicians, MC.' },
-  { id: 'decor', name: 'Florals & Decor', icon: 'flower', color: PALETTE.terracotta, kind: 'vendor', share: 0, hidden: true, description: 'Flowers, rentals, lighting, signage.' },
-  { id: 'officiant', name: 'Officiant & Ceremony', icon: 'scroll', color: PALETTE.moss, kind: 'vendor', share: 0, hidden: true, description: 'Officiant, traditions, legal paperwork.' },
-  { id: 'stationery', name: 'Invites & Stationery', icon: 'mail', color: PALETTE.taupe, kind: 'vendor', share: 0, hidden: true, description: 'Invitations, programs, website.' },
-  { id: 'lodging', name: 'Guest Lodging & Travel', icon: 'bed', color: PALETTE.natural, kind: 'vendor', share: 0, hidden: true, description: 'Room blocks, shuttles, welcome bags.' },
-  { id: 'cake', name: 'Cake & Desserts', icon: 'cake', color: PALETTE.beige, kind: 'vendor', share: 0, hidden: true, description: 'Cake, dessert tables, late-night snacks.' },
+  { id: 'catering', name: 'Catering & Bar', icon: 'utensils', color: PALETTE.tan, kind: 'vendor', share: 0, hidden: true, description: 'Food, drinks, service style.' },
+  { id: 'photo', name: 'Photo & Video', icon: 'camera', color: PALETTE.beigeDeep, kind: 'vendor', share: 0, hidden: true, description: 'Photographers, videographers, albums.' },
+  { id: 'attire', name: 'Attire & Beauty', icon: 'shirt', color: PALETTE.sage, kind: 'vendor', share: 0, hidden: true, description: 'Dress, suit, tailoring, hair & makeup.' },
+  { id: 'music', name: 'Music & Entertainment', icon: 'music', color: PALETTE.mossDeep, kind: 'vendor', share: 0, hidden: true, description: 'DJ, band, ceremony musicians, MC.' },
+  { id: 'decor', name: 'Florals & Decor', icon: 'flower', color: PALETTE.moss, kind: 'vendor', share: 0, hidden: true, description: 'Flowers, rentals, lighting, signage.' },
+  { id: 'officiant', name: 'Officiant & Ceremony', icon: 'scroll', color: PALETTE.mossDeep, kind: 'vendor', share: 0, hidden: true, description: 'Officiant, traditions, legal paperwork.' },
+  { id: 'stationery', name: 'Invites & Stationery', icon: 'mail', color: PALETTE.beigeDeep, kind: 'vendor', share: 0, hidden: true, description: 'Invitations, programs, website.' },
+  { id: 'lodging', name: 'Guest Lodging & Travel', icon: 'bed', color: PALETTE.tan, kind: 'vendor', share: 0, hidden: true, description: 'Room blocks, shuttles, welcome bags.' },
+  { id: 'cake', name: 'Cake & Desserts', icon: 'cake', color: PALETTE.sage, kind: 'vendor', share: 0, hidden: true, description: 'Cake, dessert tables, late-night snacks.' },
 ];
 
 /** The three plans. Exact days are a starting point; edit them on the Timelines page. */
 export const PLAN_SEED = [
-  { id: 'sc_a', name: 'Plan A', label: 'Sep 2027', date: '2027-09-18', color: PALETTE.terracotta },
-  { id: 'sc_b', name: 'Plan B', label: 'May 2027', date: '2027-05-15', color: PALETTE.moss },
-  { id: 'sc_c', name: 'Plan C', label: 'Oct 2027', date: '2027-10-16', color: PALETTE.walnut },
+  { id: 'sc_a', name: 'Plan A', label: 'Sep 2027', date: '2027-09-18', color: PALETTE.moss },
+  { id: 'sc_b', name: 'Plan B', label: 'May 2027', date: '2027-05-15', color: PALETTE.tan },
+  { id: 'sc_c', name: 'Plan C', label: 'Oct 2027', date: '2027-10-16', color: PALETTE.mossDeep },
 ];
 
-export const SCENARIO_COLORS = [PALETTE.terracotta, PALETTE.moss, PALETTE.walnut, PALETTE.taupe, PALETTE.natural, PALETTE.softBlack];
+export const SCENARIO_COLORS = [PALETTE.moss, PALETTE.tan, PALETTE.mossDeep, PALETTE.sage, PALETTE.beigeDeep, PALETTE.softBlack];
 
 export const MILESTONE_TEMPLATE: Array<Omit<Milestone, 'id' | 'done'>> = [
   { title: 'Set total budget & priorities', monthsBefore: 14, categoryId: 'planner' },
@@ -168,7 +168,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 2,
+    version: 3,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Gem, MapPin, MessageSquare, Sparkles, Users } from 'lucide-react';
 import { guestCounts, isAbroad, money, monthsBetween, today, top3, totals } from '../../shared/logic';
 import { useStore } from '../store';
-import { fmtDate, Stars } from '../components/ui';
+import { fmtDate, Stars, tint } from '../components/ui';
 
 export default function Dashboard() {
   const { state, scenarioId, setScenarioId, ringUnlocked } = useStore();
@@ -32,7 +32,7 @@ export default function Dashboard() {
           return (
             <div key={s.id} className="card plan" style={{ borderTop: `4px solid ${s.color}`, outline: active ? `2px solid ${s.color}` : undefined }}>
               <div className="row between">
-                <h3 style={{ color: s.color }}>{s.name}</h3>
+                <h3 style={{ color: tint(s.color) }}>{s.name}</h3>
                 {active ? <span className="pill shortlist">Viewing</span> : <button className="btn sm" onClick={() => setScenarioId(s.id)}>View plan</button>}
               </div>
               <div className="count" style={{ fontFamily: 'var(--serif)', fontSize: '3rem', fontWeight: 600, lineHeight: 1.05, margin: '8px 0 2px' }}>{days}<span className="small muted" style={{ fontFamily: 'var(--sans)', marginLeft: 8, fontSize: '.85rem' }}>days to go</span></div>

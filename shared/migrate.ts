@@ -16,14 +16,8 @@ const defaultLine = (total: number, share: number) => {
  * (simplified categories, guest list, Plans A/B/C) run once, and nothing the user typed is deleted
  * (hidden categories keep their data).
  */
-export function migrateState(input: AppState): AppState {
-  let s: AppState = {
-    ...input,
-    settings: { ...input.settings, homeCountry: input.settings.homeCountry ?? 'United States' },
-    guests: input.guests ?? [],
-    options: (input.options ?? []).map((o) => (o.country === undefined ? { ...o, country: '' } : o)),
-  };
-  if ((input.version ?? 1) >= 2) return s;
+function toV2(input: AppState): AppState {
+  let s: AppState = input;
 
   const total = s.settings.totalBudget;
 
@@ -89,5 +83,34 @@ export function migrateState(input: AppState): AppState {
     options: s.options.filter((o) => o.categoryId !== 'party'),
     notes: s.notes.map((n) => (n.categoryId === 'party' ? { ...n, categoryId: '' } : n)),
   };
+  return s;
+}
+
+/** Version 3: recolour the seeded categories and the three plans to the soft white / beige / moss palette. */
+function toV3(s: AppState): AppState {
+  const catColor = new Map(CATEGORY_SEED.map((c) => [c.id, c.color]));
+  const planColor = new Map(PLAN_SEED.map((p) => [p.id, p.color]));
+  return {
+    ...s,
+    version: 3,
+    categories: s.categories.map((c) => (catColor.has(c.id) ? { ...c, color: catColor.get(c.id)! } : c)),
+    scenarios: s.scenarios.map((sc) => (planColor.has(sc.id) ? { ...sc, color: planColor.get(sc.id)! } : sc)),
+  };
+}
+
+/**
+ * Brings any saved planner up to the current shape. Safe to run repeatedly: each step runs once, and
+ * nothing the user typed is deleted (hidden categories keep their data).
+ */
+export function migrateState(input: AppState): AppState {
+  let s: AppState = {
+    ...input,
+    settings: { ...input.settings, homeCountry: input.settings.homeCountry ?? 'United States' },
+    guests: input.guests ?? [],
+    options: (input.options ?? []).map((o) => (o.country === undefined ? { ...o, country: '' } : o)),
+  };
+  const v = input.version ?? 1;
+  if (v < 2) s = toV2(s);
+  if (v < 3) s = toV3(s);
   return s;
 }

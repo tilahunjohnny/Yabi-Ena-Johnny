@@ -43,7 +43,7 @@ export default function Settings() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="row between" style={{ marginBottom: 6 }}>
           <h3>Categories</h3>
-          <button className="btn sm" onClick={() => { const id = uid('cat'); update((s) => ({ ...s, categories: [...s.categories, { id, name: 'New category', icon: 'sparkles', color: '#8C786A', description: '', kind: 'vendor' }], budget: [...s.budget, { categoryId: id, min: 0, target: 0, max: 0 }] })); }}><Plus size={14} /> Add</button>
+          <button className="btn sm" onClick={() => { const id = uid('cat'); update((s) => ({ ...s, categories: [...s.categories, { id, name: 'New category', icon: 'sparkles', color: '#B59A72', description: '', kind: 'vendor' }], budget: [...s.budget, { categoryId: id, min: 0, target: 0, max: 0 }] })); }}><Plus size={14} /> Add</button>
         </div>
         <div className="small muted" style={{ marginBottom: 10 }}>Rename, recolour, or add the things only your wedding needs. Hidden categories keep everything you entered and can be shown again any time.</div>
         {state.categories.map((c) => (

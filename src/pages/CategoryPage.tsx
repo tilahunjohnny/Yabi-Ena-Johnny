@@ -4,7 +4,7 @@ import { GitCompare, MessageSquare, Plus } from 'lucide-react';
 import { isAbroad, optionsFor, top3, money } from '../../shared/logic';
 import { Option, Status } from '../../shared/types';
 import { useStore } from '../store';
-import { CatIcon, Empty, PageHead, Seg } from '../components/ui';
+import { CatIcon, Empty, PageHead, Seg, tint } from '../components/ui';
 import { CompareTable, OptionCard, OptionForm, blankOption } from '../components/options';
 import { RangeBar } from '../components/RangeBar';
 
@@ -41,7 +41,7 @@ export default function CategoryPage() {
     <div className="page">
       <PageHead
         eyebrow={`${all.length} option${all.length === 1 ? '' : 's'}`}
-        title={<span className="row" style={{ gap: 14 }}><span style={{ color: cat.color }}><CatIcon name={cat.icon} size={30} /></span>{cat.name}</span>}
+        title={<span className="row" style={{ gap: 14 }}><span style={{ color: tint(cat.color) }}><CatIcon name={cat.icon} size={30} /></span>{cat.name}</span>}
         subtitle={cat.description}
         actions={
           <>

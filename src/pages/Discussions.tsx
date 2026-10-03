@@ -4,7 +4,7 @@ import { Check, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { Note, uid } from '../../shared/types';
 import { visibleCategories } from '../../shared/logic';
 import { useStore } from '../store';
-import { Empty, Field, Modal, PageHead, Seg } from '../components/ui';
+import { Empty, Field, Modal, PageHead, Seg, tint } from '../components/ui';
 
 export default function Discussions() {
   const { state, update } = useStore();
@@ -51,7 +51,7 @@ export default function Discussions() {
                 <div className="row between wrap" style={{ gap: 10 }}>
                   <div className="row wrap" style={{ gap: 8 }}>
                     <h3>{n.title}</h3>
-                    {cat && <span className="pill" style={{ color: cat.color }}>{cat.name}</span>}
+                    {cat && <span className="pill" style={{ color: tint(cat.color) }}>{cat.name}</span>}
                     {n.author === 'Claude' && <span className="pill shortlist"><Sparkles size={11} /> Claude</span>}
                     {n.resolved && <span className="pill chosen">Resolved</span>}
                   </div>

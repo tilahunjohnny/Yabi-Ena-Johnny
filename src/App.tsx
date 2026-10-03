@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { CalendarRange, CheckSquare, CloudOff, Cloud, Gem, LogOut, Users, GitBranch, LayoutDashboard, Menu, MessagesSquare, Moon, PiggyBank, Settings as Cog, Sparkles, Sun } from 'lucide-react';
 import { useStore } from './store';
-import { CatIcon } from './components/ui';
+import { CatIcon, tint } from './components/ui';
 import { visibleCategories } from '../shared/logic';
 import Guests from './pages/Guests';
 import Dashboard from './pages/Dashboard';
@@ -70,7 +70,7 @@ export default function App() {
           <div className="seg" role="tablist" aria-label="Timeline scenario" style={{ overflowX: 'auto', maxWidth: '60vw' }}>
             <button className={scenarioId === 'all' ? 'on' : ''} onClick={() => setScenarioId('all')}>All timelines</button>
             {state.scenarios.map((s) => (
-              <button key={s.id} className={scenarioId === s.id ? 'on' : ''} onClick={() => setScenarioId(s.id)}><span style={{ color: s.color }}>●</span> {s.name}</button>
+              <button key={s.id} className={scenarioId === s.id ? 'on' : ''} onClick={() => setScenarioId(s.id)}><span style={{ color: tint(s.color) }}>●</span> {s.name}</button>
             ))}
           </div>
           <div className="spacer" />

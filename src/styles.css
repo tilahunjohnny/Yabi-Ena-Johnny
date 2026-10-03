@@ -1,17 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Japandi palette: soft white, beige, natural, warm taupe, moss green, soft black, terracotta, walnut */
-  --bg: #F2EEE9; --surface: #FAF7F3; --surface2: #EBE2D6; --border: #DDD0C0; --text: #2B2724; --muted: #85746A;
-  --accent: #9C4A2C; --accent-ink: #FFF8F2; --accent-soft: rgba(156, 74, 44, 0.10); --rose: #7A5238; --good: #5F6B3A; --warn: #B07A2E; --bad: #B3392F;
-  --shadow: 0 1px 2px rgba(60, 40, 25, 0.05), 0 8px 24px rgba(60, 40, 25, 0.07);
+  /* Soft white, beige and moss green */
+  --bg: #F6F3EE; --surface: #FCFAF6; --surface2: #EFE7D8; --border: #E2D6C0; --text: #2A2926; --muted: #7D7566;
+  --accent: #5E6B3B; --accent-ink: #FAF8F2; --accent-soft: rgba(94, 107, 59, 0.12); --rose: #B59A72; --good: #5E6B3B; --warn: #A8873F; --bad: #A6483C;
+  --shadow: 0 1px 2px rgba(60, 55, 30, 0.05), 0 8px 24px rgba(60, 55, 30, 0.07);
   --radius: 16px;
   --serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 :root[data-theme='dark'] {
-  --bg: #1E1C1A; --surface: #282522; --surface2: #322E2A; --border: #433D37; --text: #F0E9E0; --muted: #A1917F;
-  --accent: #C9754F; --accent-ink: #1E120B; --accent-soft: rgba(201, 117, 79, 0.16); --rose: #B08A66; --good: #9DAF73; --warn: #D9A150; --bad: #E26F5F;
+  --bg: #1F211A; --surface: #292C22; --surface2: #33372A; --border: #444A38; --text: #F1EEE4; --muted: #A5A793;
+  --accent: #A3B27A; --accent-ink: #1B2012; --accent-soft: rgba(163, 178, 122, 0.16); --rose: #CDB78F; --good: #A3B27A; --warn: #D8B35E; --bad: #E4806F;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -90,8 +90,8 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
 /* Option cards */
 .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .pod { position: relative; overflow: hidden; }
-.pod .medal { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 99px; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 15px; color: #2b1c10; }
-.medal.m1 { background: linear-gradient(135deg, #E9D2AC, #B98F5C); } .medal.m2 { background: linear-gradient(135deg, #E6DFD6, #A39A90); } .medal.m3 { background: linear-gradient(135deg, #D7A98C, #8C5A3C); }
+.pod .medal { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 99px; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 15px; color: #2f2a18; }
+.medal.m1 { background: linear-gradient(135deg, #EBDDBE, #BFA06A); } .medal.m2 { background: linear-gradient(135deg, #E8E5DC, #A9A596); } .medal.m3 { background: linear-gradient(135deg, #CDBE9F, #8B7B5A); }
 .pod.m1 { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
 .opt { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; }
 .opt .rank { width: 30px; height: 30px; border-radius: 99px; background: var(--surface2); display: grid; place-items: center; font-weight: 600; font-size: 13px; color: var(--muted); }
@@ -110,7 +110,7 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
 .num { max-width: 120px; text-align: right; padding: 6px 9px; }
 
 /* Modal */
-.overlay { position: fixed; inset: 0; z-index: 60; background: rgba(30, 24, 20, .5); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 20px; animation: fade .15s; }
+.overlay { position: fixed; inset: 0; z-index: 60; background: rgba(34, 36, 26, .45); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 20px; animation: fade .15s; }
 @keyframes fade { from { opacity: 0; } }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: min(720px, 100%); max-height: 90vh; overflow: auto; box-shadow: 0 30px 80px rgba(0, 0, 0, .35); animation: rise .2s; }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; }
