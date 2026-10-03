@@ -50,7 +50,7 @@ app.get('/healthz', (_req, res) => res.send('ok'));
 app.use(authMiddleware(process.env.APP_PASSWORD));
 if (!process.env.APP_PASSWORD) console.warn('WARNING: APP_PASSWORD is not set — anyone who can reach this server can edit your planner.');
 
-registerRingRoutes(app, gotchaPath(root));
+registerRingRoutes(app, gotchaPath(root), path.join(path.dirname(DB_FILE), 'ring-comments.json'));
 app.use('/gotcha', express.static(gotchaPath(root), { maxAge: '7d' }));
 
 app.get('/api/state', (req, res) => {

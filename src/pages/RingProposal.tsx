@@ -71,18 +71,64 @@ function IdeaModal({ initial, isNew, onClose }: { initial: ProposalIdea; isNew: 
   );
 }
 
+interface VisitorComment { id: string; name: string; text: string; createdAt: string }
+
+function useComments() {
+  const [comments, setComments] = useState<VisitorComment[]>([]);
+  useEffect(() => { fetch('/api/ring/comments').then((r) => r.json()).then((d) => setComments(d.comments ?? [])).catch(() => {}); }, []);
+  return { comments, setComments };
+}
+
+function CommentBox() {
+  const { comments, setComments } = useComments();
+  const [name, setName] = useState('');
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const post = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim() || busy) return;
+    setBusy(true);
+    try {
+      const d = await (await fetch('/api/ring/comments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, text }) })).json();
+      if (d.comments) { setComments(d.comments); setText(''); }
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="card flat" style={{ maxWidth: 560, margin: '26px auto 0' }}>
+      <h3>Leave a comment 💬</h3>
+      <form onSubmit={post} className="col" style={{ marginTop: 10 }}>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" maxLength={40} aria-label="Your name" />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Caught red-handed? Say something…" maxLength={500} aria-label="Comment" style={{ minHeight: 64 }} />
+        <button className="btn" type="submit" disabled={busy || !text.trim()} style={{ justifyContent: 'center' }}>Post comment</button>
+      </form>
+      {comments.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          {[...comments].reverse().map((c) => (
+            <div key={c.id} style={{ padding: '9px 0', borderTop: '1px solid var(--border)' }}>
+              <strong className="small">{c.name}</strong> <span className="tiny muted">· {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              <div className="small" style={{ whiteSpace: 'pre-wrap' }}>{c.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RingGate() {
   const { unlockRing } = useStore();
   const [pw, setPw] = useState('');
   const [busy, setBusy] = useState(false);
-  const [caught, setCaught] = useState<string | null>(null);
-  const [noPics, setNoPics] = useState(false);
   const [misses, setMisses] = useState(0);
-  const [tilt, setTilt] = useState(0);
-  const deck = useRef<string[]>([]);
   const [configured, setConfigured] = useState(true);
+  const [pics, setPics] = useState<Array<{ src: string; tilt: number }>>([]);
 
-  useEffect(() => { fetch('/api/ring/status').then((r) => r.json()).then((d) => setConfigured(!!d.configured)).catch(() => {}); }, []);
+  useEffect(() => {
+    fetch('/api/ring/status').then((r) => r.json()).then((d) => setConfigured(!!d.configured)).catch(() => {});
+    fetch('/api/ring/gotcha').then((r) => r.json()).then((d: { images: string[] }) => {
+      setPics([...d.images].sort(() => Math.random() - 0.5).map((src) => ({ src, tilt: Math.round((Math.random() * 14 - 7) * 10) / 10 })));
+    }).catch(() => {});
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,42 +136,34 @@ function RingGate() {
     setBusy(true);
     const ok = await unlockRing(pw).catch(() => false);
     setBusy(false);
-    if (ok) return;
-    setPw('');
-    setMisses((m) => m + 1);
-    try {
-      const { images } = (await (await fetch('/api/ring/gotcha')).json()) as { images: string[] };
-      setNoPics(images.length === 0);
-      // Shuffle-bag: show every picture once before any repeats (and never the same one twice in a row).
-      if (deck.current.length === 0) {
-        const last = caught;
-        deck.current = [...images].sort(() => Math.random() - 0.5);
-        if (deck.current.length > 1 && deck.current[deck.current.length - 1] === last) deck.current.unshift(deck.current.pop()!);
-      }
-      setTilt(Math.round((Math.random() * 10 - 5) * 10) / 10);
-      setCaught(deck.current.length ? deck.current.pop()! : '');
-    } catch { setNoPics(true); setCaught(''); }
+    if (!ok) { setPw(''); setMisses((m) => m + 1); }
   };
 
+  const card = (
+    <div key="gate" className={`card gate-card ${misses ? 'shake' : ''}`} data-miss={misses}>
+      <Lock size={28} color="var(--accent)" />
+      <h2 style={{ margin: '10px 0 4px' }}>This part is private</h2>
+      <p className="muted small" style={{ margin: '0 0 14px' }}>Enter the password to continue.</p>
+      <form onSubmit={submit} className="col">
+        <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" aria-label="Password" />
+        <button className="btn primary" type="submit" disabled={busy || !pw} style={{ justifyContent: 'center' }}>{busy ? 'Checking…' : 'Unlock'}</button>
+      </form>
+      {misses > 0 && <div className="gotcha-text" key={misses}>HAHA You thought! 😏</div>}
+      {!configured && <p className="small" style={{ color: 'var(--warn)', marginTop: 12 }}>No ring password has been set on the server yet (RING_PASSWORD), so this section can’t be opened.</p>}
+    </div>
+  );
+
+  // Pictures all around, with the password box in the middle of them.
+  const mid = Math.ceil(pics.length / 2);
+  const wall = [
+    ...pics.slice(0, mid).map((p) => <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg` }} />),
+    <div key="gate-row" className="gate-row">{card}</div>,
+    ...pics.slice(mid).map((p) => <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg` }} />),
+  ];
   return (
-    <div className="page" style={{ maxWidth: 520 }}>
-      <div className="card" style={{ textAlign: 'center', padding: 32, marginTop: 30 }}>
-        <Lock size={30} color="var(--accent)" />
-        <h2 style={{ margin: '12px 0 4px' }}>This part is private</h2>
-        <p className="muted small" style={{ margin: '0 0 18px' }}>Enter the password to continue.</p>
-        <form onSubmit={submit} className="col">
-          <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" aria-label="Password" />
-          <button className="btn primary" type="submit" disabled={busy || !pw} style={{ justifyContent: 'center' }}>{busy ? 'Checking…' : 'Unlock'}</button>
-        </form>
-        {!configured && <p className="small" style={{ color: 'var(--warn)', marginTop: 14 }}>No ring password has been set on the server yet (RING_PASSWORD), so this section can’t be opened.</p>}
-        {caught !== null && (
-          <div className="gotcha" key={misses} style={{ ['--tilt' as any]: `${tilt}deg` }}>
-            {caught ? <img src={caught} alt="" onError={() => setNoPics(true)} /> : null}
-            {(noPics || !caught) && <div className="gotcha-emoji">🙈😏</div>}
-            <div className="gotcha-text">HAHA You thought!</div>
-          </div>
-        )}
-      </div>
+    <div className="page" style={{ maxWidth: 1100 }}>
+      <div className="wall">{wall}</div>
+      <CommentBox />
     </div>
   );
 }
@@ -133,6 +171,26 @@ function RingGate() {
 export default function RingProposal() {
   const { ringUnlocked } = useStore();
   return ringUnlocked ? <RingContent /> : <RingGate />;
+}
+
+function OwnerComments() {
+  const { comments, setComments } = useComments();
+  if (comments.length === 0) return null;
+  const del = async (id: string) => {
+    const d = await (await fetch(`/api/ring/comments/${id}`, { method: 'DELETE' })).json();
+    if (d.comments) setComments(d.comments);
+  };
+  return (
+    <div className="card flat" style={{ marginTop: 28 }}>
+      <h3>Comments from snoopers 👀</h3>
+      {[...comments].reverse().map((c) => (
+        <div key={c.id} className="row between" style={{ padding: '9px 0', borderTop: '1px solid var(--border)', alignItems: 'flex-start' }}>
+          <div><strong className="small">{c.name}</strong> <span className="tiny muted">· {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span><div className="small" style={{ whiteSpace: 'pre-wrap' }}>{c.text}</div></div>
+          <button className="btn sm icon ghost danger" aria-label="Delete comment" onClick={() => del(c.id)}><Trash2 size={13} /></button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function RingContent() {
@@ -248,6 +306,8 @@ function RingContent() {
           </form>
         </div>
       )}
+
+      <OwnerComments />
 
       {ring && <RingModal key={ring.r.id} initial={ring.r} isNew={ring.isNew} onClose={() => setRing(null)} />}
       {idea && <IdeaModal key={idea.p.id} initial={idea.p} isNew={idea.isNew} onClose={() => setIdea(null)} />}

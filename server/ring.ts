@@ -29,8 +29,37 @@ export function mergeSecrets(incoming: AppState, existing: AppState, unlocked: b
   return { ...incoming, rings: existing.rings, proposals: existing.proposals, proposalChecklist: existing.proposalChecklist };
 }
 
-export function registerRingRoutes(app: Express, gotchaDir: string) {
+export interface VisitorComment { id: string; name: string; text: string; createdAt: string }
+
+export function registerRingRoutes(app: Express, gotchaDir: string, commentsFile: string) {
   let failures = 0;
+
+  const readComments = (): VisitorComment[] => {
+    try { return JSON.parse(fs.readFileSync(commentsFile, 'utf8')) as VisitorComment[]; } catch { return []; }
+  };
+  const writeComments = (list: VisitorComment[]) => {
+    fs.mkdirSync(path.dirname(commentsFile), { recursive: true });
+    const tmp = commentsFile + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(list, null, 2));
+    fs.renameSync(tmp, commentsFile);
+  };
+
+  // Anyone signed in to the site may read and leave comments; only the unlocked owner may delete them.
+  app.get('/api/ring/comments', (_req, res) => res.json({ comments: readComments() }));
+  app.post('/api/ring/comments', (req: Request, res: Response) => {
+    const text = String(req.body?.text ?? '').trim().slice(0, 500);
+    const name = String(req.body?.name ?? '').trim().slice(0, 40) || 'Anonymous snoop';
+    if (!text) return res.status(400).json({ error: 'Say something first' });
+    const list = [...readComments(), { id: crypto.randomUUID(), name, text, createdAt: new Date().toISOString() }].slice(-200);
+    writeComments(list);
+    res.json({ comments: list });
+  });
+  app.delete('/api/ring/comments/:id', (req: Request, res: Response) => {
+    if (!ringUnlocked(req)) return res.status(403).json({ error: 'Locked' });
+    const list = readComments().filter((c) => c.id !== req.params.id);
+    writeComments(list);
+    res.json({ comments: list });
+  });
 
   app.get('/api/ring/status', (req, res) => res.json({ configured: !!process.env.RING_PASSWORD, unlocked: ringUnlocked(req) }));
 
