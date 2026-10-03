@@ -39,7 +39,7 @@ export default function Backdrop() {
     const order = shuffle(pics);
     return slots.map((slot, i) => ({ slot, src: order[i % order.length], tilt: Math.round((Math.random() * 2 - 1) * 18) }));
   }, [pathname, pics]);
-  if (!pics.length) return null;
+  if (!pics.length || pathname.startsWith('/ring')) return null; // the Ring & Proposal page keeps its own picture wall
   return (
     <div aria-hidden="true" className="stickers">
       {placed.map(({ slot, src, tilt }, i) => (
