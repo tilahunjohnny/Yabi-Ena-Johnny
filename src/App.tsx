@@ -5,6 +5,7 @@ import { useStore } from './store';
 import { CatIcon, tint } from './components/ui';
 import { visibleCategories } from '../shared/logic';
 import Guests from './pages/Guests';
+import { loadGotcha } from './lib/gotcha';
 import Dashboard from './pages/Dashboard';
 import CategoryPage from './pages/CategoryPage';
 import Budget from './pages/Budget';
@@ -19,6 +20,8 @@ import Settings from './pages/Settings';
 export default function App() {
   const { state, scenarioId, setScenarioId, sync, theme, toggleTheme, toastMsg, logout } = useStore();
   const [passwordProtected, setPasswordProtected] = useState(false);
+  // Warm up the lock-screen pictures in the background so they appear instantly when someone opens the ring page.
+  useEffect(() => { const t = setTimeout(() => { loadGotcha(); }, 1500); return () => clearTimeout(t); }, []);
   useEffect(() => { fetch('/api/auth/info').then((r) => r.json()).then((d) => setPasswordProtected(!!d.passwordProtected)).catch(() => {}); }, []);
   const [open, setOpen] = useState(false);
   const loc = useLocation();

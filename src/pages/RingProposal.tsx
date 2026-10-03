@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Lock, MapPin, Pencil
 import { ChecklistItem, ProposalIdea, Ring, Status, uid } from '../../shared/types';
 import { money } from '../../shared/logic';
 import { useStore } from '../store';
+import { loadGotcha } from '../lib/gotcha';
 import { Empty, Field, Modal, NumInput, PageHead, Seg, Stars, StatusPill, STATUSES, STATUS_LABEL } from '../components/ui';
 
 function move<T>(arr: T[], idx: number, dir: -1 | 1 | 'top'): T[] {
@@ -125,9 +126,9 @@ function RingGate() {
 
   useEffect(() => {
     fetch('/api/ring/status').then((r) => r.json()).then((d) => setConfigured(!!d.configured)).catch(() => {});
-    fetch('/api/ring/gotcha').then((r) => r.json()).then((d: { images: string[] }) => {
-      setPics([...d.images].sort(() => Math.random() - 0.5).map((src) => ({ src, tilt: Math.round((Math.random() * 14 - 7) * 10) / 10 })));
-    }).catch(() => {});
+    loadGotcha().then((images) => {
+      setPics([...images].sort(() => Math.random() - 0.5).map((src) => ({ src, tilt: Math.round((Math.random() * 14 - 7) * 10) / 10 })));
+    });
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -142,8 +143,8 @@ function RingGate() {
   const card = (
     <div key="gate" className={`card gate-card ${misses ? 'shake' : ''}`} data-miss={misses}>
       <Lock size={28} color="var(--accent)" />
-      <h2 style={{ margin: '10px 0 4px' }}>አንቺ ወሬኛ 😜</h2>
-      <p className="muted small" style={{ margin: '0 0 14px' }}>Love ya pookie 😉</p>
+      <h2 style={{ margin: '10px 0 4px' }}>አንቺ ወሬኛ LOL</h2>
+      <p className="muted small" style={{ margin: '0 0 14px' }}>Love ya pookie 😉🫰🏾</p>
       <form onSubmit={submit} className="col">
         <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" aria-label="Password" />
         <button className="btn primary" type="submit" disabled={busy || !pw} style={{ justifyContent: 'center' }}>{busy ? 'Checking…' : 'Unlock'}</button>
@@ -166,12 +167,12 @@ function RingGate() {
       const stagger = outer ? 0 : Math.PI / Math.max(1, count); // offset the inner ring so pictures interleave
       const theta = -Math.PI / 2 + (2 * Math.PI * k) / Math.max(1, count) + stagger;
       const [rx, ry] = single ? [36, 36] : outer ? [41, 42] : [33, 30];
-      return { ...p, x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
+      return { ...p, i, x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
     });
   }, [pics]);
 
   const pic = (p: (typeof placed)[number]) => (
-    <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg`, ['--x' as any]: `${p.x}%`, ['--y' as any]: `${p.y}%` }} />
+    <img key={p.src} className="wall-pic" src={p.src} alt="" style={{ ['--tilt' as any]: `${p.tilt}deg`, ['--x' as any]: `${p.x}%`, ['--y' as any]: `${p.y}%`, ['--i' as any]: p.i }} />
   );
   const mid = Math.ceil(placed.length / 2);
   const wall = [...placed.slice(0, mid).map(pic), <div key="gate-row" className="gate-row">{card}</div>, ...placed.slice(mid).map(pic)];
