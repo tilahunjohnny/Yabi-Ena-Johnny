@@ -166,7 +166,7 @@ label.field > :not(span):not(.hint) { margin-top: 6px; text-transform: none; let
 
 /* "HAHA you thought" screen */
 .gotcha { margin-top: 22px; animation: pop .45s cubic-bezier(.2, 1.4, .4, 1) both; }
-.gotcha img { display: block; width: 100%; max-height: 420px; object-fit: contain; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow); transform: rotate(var(--tilt, 0deg)); background: var(--surface2); }
+.gotcha img { display: block; margin: 0 auto; width: auto; max-width: min(100%, 340px); max-height: 340px; object-fit: contain; transform: rotate(var(--tilt, 0deg)); filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .28)); }
 .gotcha-emoji { font-size: 4rem; line-height: 1.2; }
 .gotcha-text { font-family: var(--serif); font-size: 2rem; font-weight: 700; margin-top: 12px; background: linear-gradient(120deg, var(--accent), var(--rose)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 @keyframes pop { from { opacity: 0; transform: scale(.85) translateY(10px); } to { opacity: 1; transform: none; } }

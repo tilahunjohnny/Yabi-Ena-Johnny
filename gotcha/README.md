@@ -1,6 +1,6 @@
 # "HAHA You thought" pictures
 
-Drop image files in this folder (`.jpg`, `.png`, `.webp`, `.gif`). Each wrong guess on the
+Drop image files in this folder (`.jpg`, `.png`, `.webp`, `.gif`; **not** iPhone `.heic`). Each wrong guess on the
 Ring & Proposal password screen shows a different one, shuffled so none repeats until all have
 been shown. With no pictures here it falls back to an emoji.
 
