@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Lock, MapPin, Scale, Store, UserRound, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUp, ExternalLink, Gem, Palette, Lock, MapPin, Scale, Store, UserRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ChecklistItem, ProposalIdea, Ring, Status, uid } from '../../shared/types';
 import { money } from '../../shared/logic';
 import { useStore } from '../store';
 import { loadGotcha } from '../lib/gotcha';
+import { DesignBoard } from '../components/DesignBoard';
 import { Compare, HerDetails, Jewelers, RingDashboard, useJewelerEditor } from '../components/RingDesk';
 import { Empty, Field, Modal, NumInput, PageHead, Seg, Stars, StatusPill, STATUSES, STATUS_LABEL } from '../components/ui';
 
@@ -212,7 +213,7 @@ function OwnerComments() {
 
 function RingContent() {
   const { state, update, lockRing } = useStore();
-  const [tab, setTab] = useState<'details' | 'jewelers' | 'compare' | 'rings' | 'where' | 'prep'>('jewelers');
+  const [tab, setTab] = useState<'design' | 'details' | 'jewelers' | 'compare' | 'rings' | 'where' | 'prep'>('jewelers');
   const jw = useJewelerEditor();
   const [ring, setRing] = useState<{ r: Ring; isNew: boolean } | null>(null);
   const [idea, setIdea] = useState<{ p: ProposalIdea; isNew: boolean } | null>(null);
@@ -243,9 +244,10 @@ function RingContent() {
       />
       <RingDashboard />
       <div style={{ marginBottom: 20, overflowX: 'auto' }}>
-        <Seg value={tab} onChange={setTab} options={[{ value: 'jewelers', label: <><Store size={14} /> Jewelers · {state.jewelers.length}</> }, { value: 'compare', label: <><Scale size={14} /> Compare &amp; timeline</> }, { value: 'details', label: <><UserRound size={14} /> Her details</> }, { value: 'rings', label: <><Gem size={14} /> Other rings I like · {state.rings.length}</> }, { value: 'where', label: <><MapPin size={14} /> Where to propose · {state.proposals.length}</> }, { value: 'prep', label: `Prep list · ${prepDone}/${state.proposalChecklist.length}` }]} />
+        <Seg value={tab} onChange={setTab} options={[{ value: 'design', label: <><Palette size={14} /> Design board · {state.designInspo.length}</> }, { value: 'jewelers', label: <><Store size={14} /> Jewelers · {state.jewelers.length}</> }, { value: 'compare', label: <><Scale size={14} /> Compare &amp; timeline</> }, { value: 'details', label: <><UserRound size={14} /> Her details</> }, { value: 'rings', label: <><Gem size={14} /> Other rings I like · {state.rings.length}</> }, { value: 'where', label: <><MapPin size={14} /> Where to propose · {state.proposals.length}</> }, { value: 'prep', label: `Prep list · ${prepDone}/${state.proposalChecklist.length}` }]} />
       </div>
 
+      {tab === 'design' && <DesignBoard />}
       {tab === 'jewelers' && <Jewelers editor={jw} />}
       {tab === 'compare' && <Compare editor={jw} />}
       {tab === 'details' && <HerDetails />}

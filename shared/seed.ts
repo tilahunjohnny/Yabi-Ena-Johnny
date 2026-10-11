@@ -187,7 +187,7 @@ export function seedState(): AppState {
   const checklist: ChecklistItem[] = CHECKLIST_SEED.filter(([categoryId]) => categoryId !== 'party').map(([categoryId, title]) => ({ id: uid('ck'), title, categoryId, done: false, note: '' }));
   const proposalChecklist: ChecklistItem[] = PROPOSAL_CHECKLIST_SEED.map((title) => ({ id: uid('pk'), title, categoryId: 'proposal', done: false, note: '' }));
   return {
-    version: 10,
+    version: 11,
     settings: { coupleNames: 'Yabi & Johnny', totalBudget, guestCount, currency: 'USD', homeCountry: 'United States' },
     categories,
     options: [],
@@ -205,5 +205,7 @@ export function seedState(): AppState {
     ringBrief: { ...blankRingBrief(), ...HER_RING },
     ringHints: [],
     jewelers: [],
+    designInspo: [],
+    designChoices: [],
   };
 }

@@ -153,6 +153,8 @@ export function migrateState(input: AppState): AppState {
     ringBrief: { ...blankRingBrief(), ...(input.ringBrief ?? {}) },
     ringHints: input.ringHints ?? [],
     jewelers: (input.jewelers ?? []).map((j) => ({ ...j, quotes: j.quotes ?? [] })),
+    designInspo: input.designInspo ?? [],
+    designChoices: input.designChoices ?? [],
     options: (input.options ?? []).map((o) => ({ ...o, country: o.country ?? '', tiers: o.tiers ?? [], tierId: o.tierId ?? '' })),
   };
   const v = input.version ?? 1;
@@ -173,5 +175,6 @@ export function migrateState(input: AppState): AppState {
     // Roen's first quote, added once and only if nothing has been logged for it yet.
     s = { ...s, version: 10, jewelers: s.jewelers.map((j) => (j.url === FIRST_JEWELER.url && j.quotes.length === 0 ? { ...j, status: 'quoted' as const, quotes: [{ id: uid('q'), date: new Date().toISOString().slice(0, 10), ...ROEN_QUOTE }] } : j)) };
   }
+  if (v < 11) s = { ...s, version: 11 }; // design board: the new lists default to empty above
   return s;
 }

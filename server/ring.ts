@@ -22,13 +22,13 @@ export function ringUnlocked(req: Request): boolean {
 
 /** Remove everything private from a state before it leaves the server. */
 export function stripSecrets(state: AppState): AppState {
-  return { ...state, rings: [], proposals: [], proposalChecklist: [], ringBrief: blankRingBrief(), ringHints: [], jewelers: [] };
+  return { ...state, rings: [], proposals: [], proposalChecklist: [], ringBrief: blankRingBrief(), ringHints: [], jewelers: [], designInspo: [], designChoices: [] };
 }
 
 /** Accept an incoming state, but never let a locked client overwrite the private parts. */
 export function mergeSecrets(incoming: AppState, existing: AppState, unlocked: boolean): AppState {
   if (unlocked) return incoming;
-  return { ...incoming, rings: existing.rings, proposals: existing.proposals, proposalChecklist: existing.proposalChecklist, ringBrief: existing.ringBrief, ringHints: existing.ringHints, jewelers: existing.jewelers };
+  return { ...incoming, rings: existing.rings, proposals: existing.proposals, proposalChecklist: existing.proposalChecklist, ringBrief: existing.ringBrief, ringHints: existing.ringHints, jewelers: existing.jewelers, designInspo: existing.designInspo, designChoices: existing.designChoices };
 }
 
 export interface VisitorComment { id: string; name: string; text: string; createdAt: string }

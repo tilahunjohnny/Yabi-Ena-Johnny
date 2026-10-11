@@ -173,6 +173,33 @@ export interface RingBrief {
   proposalDate: string;
 }
 
+/** The parts of a ring that can be designed or customised. */
+export type DesignElement = 'overall' | 'shape' | 'setting' | 'band' | 'metal' | 'stone' | 'details' | 'engraving';
+export type DesignVote = 'love' | 'maybe' | 'no';
+
+/** A picture (or link) of design inspiration, tagged with the part of the ring it is about. Private. */
+export interface DesignInspo {
+  id: string;
+  /** Saved picture path, or '' for a link-only card. */
+  image: string;
+  url: string;
+  title: string;
+  element: DesignElement;
+  vote: DesignVote;
+  note: string;
+  createdAt: string;
+}
+
+/** What is being decided for one part of the ring (the customisation sheet). */
+export interface DesignChoice {
+  element: DesignElement;
+  /** The current answer, e.g. "Floral basket with six petals". */
+  choice: string;
+  decided: boolean;
+  /** Questions for the jeweler, constraints, alternatives. */
+  note: string;
+}
+
 /** Something she has said or hinted about the ring. */
 export interface RingHint {
   id: string;
@@ -281,6 +308,8 @@ export interface AppState {
   ringBrief: RingBrief;
   ringHints: RingHint[];
   jewelers: Jeweler[];
+  designInspo: DesignInspo[];
+  designChoices: DesignChoice[];
 }
 
 export const uid = (p = 'id') => `${p}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`;
