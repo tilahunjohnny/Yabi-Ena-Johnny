@@ -295,7 +295,7 @@ export function Compare({ editor }: { editor: ReturnType<typeof useJewelerEditor
           {rows.filter((r) => r.ready.date).map(({ j, ready }) => (
             <div key={j.id} style={{ marginBottom: 12 }}>
               <div className="row between small"><b>{j.name}</b><span className={ready.lateBy !== null && ready.lateBy > 0 ? 'bad-t' : 'muted'}>{fmtDate(ready.date)}{ready.lateBy !== null && (ready.lateBy > 0 ? ` · ${ready.lateBy} days late` : ' · in time')}</span></div>
-              <div className="tl"><i style={{ width: `${pct(ready.date)}%`, opacity: ready.firm ? 1 : 0.55 }} />{b.needBy && <span className="mark" title={`Need by ${fmtDate(b.needBy)}`} style={{ left: `${pct(b.needBy)}%` }} />}</div>
+              <div className="ring-bar"><i style={{ width: `${pct(ready.date)}%`, opacity: ready.firm ? 1 : 0.55 }} />{b.needBy && <span className="mark" title={`Need by ${fmtDate(b.needBy)}`} style={{ left: `${pct(b.needBy)}%` }} />}</div>
             </div>
           ))}
           {b.needBy && <div className="tiny muted"><span style={{ display: 'inline-block', width: 2, height: 11, background: 'var(--text)', verticalAlign: 'middle', marginRight: 6 }} />Need it by {fmtDate(b.needBy)}</div>}
