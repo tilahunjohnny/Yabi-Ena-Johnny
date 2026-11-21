@@ -317,3 +317,6 @@ button.nav-fold.open svg { transform: none; }
 .place-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
 .place-actions select { flex: 1 1 110px; min-width: 0; width: auto; padding: 5px 8px; font-size: 12.5px; }
 .place-icons { display: flex; margin-left: auto; flex: none; }
+.guest.inner { box-shadow: inset 3px 0 0 var(--accent); padding-left: 10px; }
+.splitbar { display: flex; height: 8px; border-radius: 99px; background: var(--surface2); overflow: hidden; margin: 8px 0 6px; }
+.splitbar i { display: block; height: 100%; }

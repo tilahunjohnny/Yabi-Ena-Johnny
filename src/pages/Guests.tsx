@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { ArrowLeftRight, Check, FolderInput, GripVertical, HelpCircle, Heart, Pencil, Plus, StickyNote, Trash2, Upload, X } from 'lucide-react';
-import { guestCounts } from '../../shared/logic';
+import { guestCounts, money } from '../../shared/logic';
 import { Guest, GuestSide, GuestStatus, uid } from '../../shared/types';
 import { useStore } from '../store';
-import { Empty, Field, Modal, NumInput, PageHead, Seg } from '../components/ui';
+import { Empty, Field, Modal, PageHead, Seg } from '../components/ui';
 import { ImportedGuest, parseGuestSheet } from '../lib/guestImport';
 
 const GROUPS = ['Family', 'Friends', 'Work', 'Other'];
@@ -25,7 +25,7 @@ function Row({ g, ctl }: { g: Guest; ctl: Ctl }) {
   const patch = (p: Partial<Guest>) => update((s) => ({ ...s, guests: s.guests.map((x) => (x.id === g.id ? { ...x, ...p } : x)) }));
   const picked = ctl.selected.has(g.id);
   return (
-    <div className={`guest ${picked ? 'picked' : ''}`} style={{ opacity: g.status === 'maybe' ? 0.92 : 1 }} draggable
+    <div className={`guest ${picked ? 'picked' : ''} ${g.inner ? 'inner' : ''}`} style={{ opacity: g.status === 'maybe' ? 0.92 : 1 }} draggable
       onDragStart={(e) => { const ids = picked ? Array.from(ctl.selected) : [g.id]; e.dataTransfer.setData(DRAG, JSON.stringify(ids)); e.dataTransfer.effectAllowed = 'move'; }}>
       <div className="row" style={{ gap: 8 }}>
         <span className="drag-grip" aria-hidden="true"><GripVertical size={14} /></span>
@@ -225,7 +225,12 @@ export default function Guests() {
 
   const upper = c.yes + c.maybe;
   const smallList = state.guests.filter((g) => g.inner);
-  const target = state.settings.smallGuestTarget ?? 0;
+  const smallYabi = smallList.filter((g) => g.side === 'yabi').length;
+  const smallJohnny = smallList.length - smallYabi;
+  // Venue + food budget spread over each headcount, so the saving from a smaller wedding is visible without making another list.
+  const venueFood = ['venue', 'catering'].reduce((a, id) => a + (state.budget.find((b) => b.categoryId === id)?.target ?? 0), 0);
+  const perFull = upper > 0 ? venueFood / upper : 0;
+  const perSmall = smallList.length > 0 ? venueFood / smallList.length : 0;
   const setBudgetGuests = (n: number) => { update((s) => ({ ...s, settings: { ...s.settings, guestCount: n } })); toast(`Guest estimate set to ${n}`); };
 
   const onFile = async (f: File) => {
@@ -261,13 +266,17 @@ export default function Guests() {
           <div className="tiny muted" style={{ marginTop: 6 }}>Headcount {c.yes}–{upper}</div>
         </div>
         <div className="card" style={{ borderColor: smallList.length ? 'var(--accent)' : undefined }}>
-          <div className="row between"><div className="tiny muted">Small wedding</div><label className="tiny muted row" style={{ gap: 6 }}>Goal <NumInput value={target} onChange={(n) => update((s) => ({ ...s, settings: { ...s.settings, smallGuestTarget: n } }))} className="tiny-num" /></label></div>
-          <div className="stat">{smallList.length}{target > 0 && <span className="muted small"> of {target}</span>}</div>
-          {target > 0 && <div className="progress" style={{ margin: '8px 0 4px' }}><i style={{ width: `${Math.min(100, (smallList.length / target) * 100)}%`, background: smallList.length > target ? 'var(--bad)' : undefined }} /></div>}
-          <div className="tiny muted">{target > 0 && smallList.length > target ? `${smallList.length - target} over your goal` : target > 0 ? `${target - smallList.length} spots left` : 'Set a goal to see how many spots are left'}</div>
+          <div className="tiny muted">Small wedding</div>
+          <div className="stat">{smallList.length}<span className="muted small"> of {state.guests.length} people</span></div>
+          <div className="splitbar" role="img" aria-label={`Small wedding: ${smallYabi} from Yabi's side, ${smallJohnny} from Johnny's side`}>
+            <i style={{ width: `${state.guests.length ? (smallYabi / state.guests.length) * 100 : 0}%`, background: 'var(--accent)' }} />
+            <i style={{ width: `${state.guests.length ? (smallJohnny / state.guests.length) * 100 : 0}%`, background: 'var(--rose, var(--accent))', opacity: .75 }} />
+          </div>
+          <div className="tiny muted">Yabi {smallYabi} · Johnny {smallJohnny}{state.guests.length ? ` · ${Math.round((smallList.length / state.guests.length) * 100)}% of the list` : ''}</div>
+          {perFull > 0 && smallList.length > 0 && <div className="tiny" style={{ marginTop: 6 }}>Venue + food per guest: {money(perFull, state.settings.currency)} → <strong>{money(perSmall, state.settings.currency)}</strong></div>}
           <div className="row wrap" style={{ gap: 6, marginTop: 10 }}>
             <button className="btn sm" disabled={!c.yes} onClick={() => { apply(state.guests.filter((g) => g.status === 'yes').map((g) => g.id), (g) => ({ ...g, inner: true })); toast('Added everyone marked Yes'); }}>Start from my Yeses</button>
-            <button className="btn sm ghost" disabled={!smallList.length} onClick={() => { if (confirm('Clear the small wedding list? Your full list is not changed.')) { apply(smallList.map((g) => g.id), (g) => ({ ...g, inner: false })); } }}>Clear</button>
+            <button className="btn sm ghost" disabled={!smallList.length} onClick={() => { if (confirm('Clear the small wedding picks? Your full list is not changed.')) { apply(smallList.map((g) => g.id), (g) => ({ ...g, inner: false })); } }}>Clear</button>
           </div>
         </div>
         <div className="card">

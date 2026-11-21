@@ -87,8 +87,6 @@ export interface Settings {
   currency: string;
   /** Options in any other country are flagged as "abroad". */
   homeCountry: string;
-  /** How many guests the smaller wedding should have (0 = not set). */
-  smallGuestTarget?: number;
 }
 
 export interface Note {
