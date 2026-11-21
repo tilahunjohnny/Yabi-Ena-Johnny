@@ -31,6 +31,7 @@ function summarize(state: AppState): string {
       scenarios: state.scenarios.map((s) => ({ id: s.id, name: s.name, date: s.date })),
       rings: state.rings.map((r) => ({ id: r.id, name: r.name, vendor: r.vendor, price: r.price, status: r.status })),
       proposal_ideas: state.proposals.map((p) => ({ id: p.id, name: p.name, location: p.location, status: p.status })),
+      locations: state.places.map((p) => ({ id: p.id, name: p.name, kind: p.kind, status: p.status, location: p.location })),
       decision_tree_nodes: state.tree.nodes.map((n) => n.data.label),
     },
     null,
@@ -43,6 +44,7 @@ You help them compare venues and vendors, rank choices, manage budgets and timel
 
 Rules:
 - You can read the planner's current data (below) and change it with tools. When the user pastes a link, call fetch_url first, extract the facts (name, location, price, capacity, lead time), then call add_option (or add_ring / add_proposal_idea) with those facts. Never invent prices: if a price is not on the page, leave cost at 0 and say so.
+- Decide where a link belongs. A church, chapel or other ceremony site, or something described as "ceremony", goes to add_place with kind "ceremony". A banquet hall, estate, restaurant or other party space goes to add_place with kind "reception" (or "both" if it does the ceremony and the reception). Use add_option in the Venues category only when there are real prices to compare. Articles, Instagram and Pinterest posts, and general inspiration go to add_idea. If you are unsure, pick the most likely one and say where you put it.
 - Make the changes the user asks for, then confirm briefly what you did. Ask a question only if something essential is missing.
 - Prefer status "rejected" over delete_option unless asked to delete.
 - When the user attaches files (price sheets, brochures, PDFs, screenshots, spreadsheets, documents), read them carefully and add every venue / vendor / option you find to the right category with add_option (several calls in one turn is fine). Use only numbers that are in the files; never guess a price. If the same venue appears in more than one file or page, merge it into ONE option, and if it already exists in the planner use update_option.

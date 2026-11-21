@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, ExternalLink, ImagePlus, Link2, Pencil, Plus, Star, Trash2 } from 'lucide-react';
-import { Idea, IdeaSource, uid } from '../../shared/types';
+import { Idea, IdeaSource, Place, uid } from '../../shared/types';
+import { KIND_LABEL, classifyLink } from '../../shared/places';
 import { SOURCES, detectSource, normalizeUrl } from '../../shared/ideas';
 import { addMonths } from '../../shared/seed';
 import { today, visibleCategories } from '../../shared/logic';
@@ -60,6 +61,24 @@ function IdeaModal({ initial, isNew, autoFetch, onClose }: { initial: Idea; isNe
         </div>
       </Field>
       {note && <div className="small muted" style={{ margin: '8px 0 0' }}>{note}</div>}
+      {isNew && d.url && (() => {
+        const v = classifyLink(d.url, d.title, d.note);
+        if (v.destination === 'idea' || v.confidence === 'low') return null;
+        const kind = v.destination;
+        return (
+          <div className="card flat" style={{ marginTop: 10, borderColor: 'var(--accent)' }}>
+            <div className="row between wrap" style={{ gap: 8 }}>
+              <span className="small">This looks like a place for the <b>{KIND_LABEL[kind].toLowerCase()}</b> ({v.reason}).</span>
+              <button type="button" className="btn sm primary" onClick={() => {
+                const place: Place = { id: uid('place'), name: d.title.split(/\s+[|–—-]\s+/)[0].trim() || d.siteName || 'New location', kind, url: d.url, location: '', country: '', image: d.image, capacity: 0, cost: 0, status: 'idea', rating: 0, note: d.note, createdAt: new Date().toISOString() };
+                update((s) => ({ ...s, places: [place, ...s.places] }));
+                toast(`Added to Locations (${KIND_LABEL[kind]})`);
+                onClose();
+              }}>Move to Locations</button>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid g2" style={{ marginTop: 14, alignItems: 'start' }}>
         <div className="col" style={{ gap: 12 }}>

@@ -1,4 +1,4 @@
-import { AppState, Guest, Idea, Option, PriceTier, Status, TreeEdge, TreeNode, Weekday, uid } from './types';
+import { AppState, Guest, Idea, Place, PlaceKind, Option, PriceTier, Status, TreeEdge, TreeNode, Weekday, uid } from './types';
 import { detectSource, normalizeUrl } from './ideas';
 import { dayLabel, moveOption } from './logic';
 
@@ -192,6 +192,34 @@ export const TOOL_DEFS = [
         revisit_months: { type: 'number', description: 'Months before the wedding to look at it again (0 = no reminder)' }, favorite: { type: 'boolean' },
       },
       required: ['title'],
+    },
+  },
+  {
+    name: 'add_place',
+    description: 'Add a location to the Locations list: a place for the ceremony, the reception, both, or somewhere else (rehearsal dinner, getting ready, after-party). Use this for churches, chapels, ceremony sites and venues the couple is only considering. Use add_option instead when you have real prices to compare in the Venues category.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        kind: { type: 'string', enum: ['ceremony', 'reception', 'both', 'other'], description: 'ceremony = where they marry, reception = where they celebrate, both = does both' },
+        url: { type: 'string' }, location: { type: 'string', description: 'City or area' }, country: { type: 'string' },
+        capacity: { type: 'number' }, cost: { type: 'number', description: 'Only a number that is on the page; otherwise omit' },
+        status: { type: 'string', enum: ['idea', 'shortlist', 'chosen', 'rejected'] }, note: { type: 'string' },
+      },
+      required: ['name', 'kind'],
+    },
+  },
+  {
+    name: 'update_place',
+    description: 'Change a location: move it between ceremony / reception / both, set its status, or edit its details.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        place: { type: 'string', description: 'Location id or (part of) its name' },
+        name: { type: 'string' }, kind: { type: 'string', enum: ['ceremony', 'reception', 'both', 'other'] }, url: { type: 'string' }, location: { type: 'string' }, country: { type: 'string' },
+        capacity: { type: 'number' }, cost: { type: 'number' }, status: { type: 'string', enum: ['idea', 'shortlist', 'chosen', 'rejected'] }, note: { type: 'string' },
+      },
+      required: ['place'],
     },
   },
   {
@@ -442,6 +470,33 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
         revisitMonths: Math.max(0, Number(input.revisit_months) || 0), createdAt: new Date().toISOString(),
       };
       return { state: { ...state, ideas: [idea, ...state.ideas] }, message: `Saved "${idea.title}" to the Idea Board.`, action: `Saved idea "${idea.title}"` };
+    }
+    case 'add_place': {
+      const url = input.url ? normalizeUrl(String(input.url)) : '';
+      const kind: PlaceKind = ['ceremony', 'reception', 'both', 'other'].includes(String(input.kind)) ? (input.kind as PlaceKind) : 'other';
+      const dup = url && state.places.find((p) => p.url === url);
+      if (dup) return fail(`"${dup.name}" is already on the Locations list (${dup.kind}). Use update_place to change it.`);
+      const place: Place = {
+        id: uid('place'), name: String(input.name), kind, url, location: String(input.location ?? ''), country: String(input.country ?? ''), image: '',
+        capacity: Math.max(0, Number(input.capacity) || 0), cost: Math.max(0, Number(input.cost) || 0), status: (input.status as Status) ?? 'idea', rating: 0, note: String(input.note ?? ''), createdAt: new Date().toISOString(),
+      };
+      return { state: { ...state, places: [place, ...state.places] }, message: `Added "${place.name}" to Locations as ${kind}.`, action: `Location: ${place.name} (${kind})` };
+    }
+    case 'update_place': {
+      const r = norm(input.place);
+      const p = state.places.find((x) => x.id === input.place) ?? state.places.find((x) => norm(x.name) === r) ?? state.places.find((x) => norm(x.name).includes(r));
+      if (!p) return fail(`No location matching "${input.place}".`);
+      const next: Place = { ...p };
+      if (input.name !== undefined) next.name = String(input.name);
+      if (['ceremony', 'reception', 'both', 'other'].includes(String(input.kind))) next.kind = input.kind as PlaceKind;
+      if (input.url !== undefined) next.url = normalizeUrl(String(input.url)) || next.url;
+      if (input.location !== undefined) next.location = String(input.location);
+      if (input.country !== undefined) next.country = String(input.country);
+      if (input.capacity !== undefined) next.capacity = Math.max(0, Number(input.capacity) || 0);
+      if (input.cost !== undefined) next.cost = Math.max(0, Number(input.cost) || 0);
+      if (input.status !== undefined) next.status = input.status as Status;
+      if (input.note !== undefined) next.note = String(input.note);
+      return { state: { ...state, places: state.places.map((x) => (x.id === p.id ? next : x)) }, message: `Updated "${next.name}".`, action: `Updated location ${next.name}` };
     }
     case 'add_guest': {
       const side = norm(input.side).startsWith('j') ? 'johnny' : 'yabi';

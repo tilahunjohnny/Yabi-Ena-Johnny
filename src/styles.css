@@ -293,3 +293,8 @@ input.slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px var(--a
 .tl .mark { position: absolute; top: -4px; width: 2px; height: 18px; background: var(--text); }
 .good-t { color: var(--good); } .bad-t { color: var(--bad); }
 @media (max-width: 900px) { .ring-hero { grid-template-columns: 1fr; } }
+
+/* Folding sidebar groups */
+button.nav-fold { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: 0; cursor: pointer; text-align: left; }
+button.nav-fold svg { transition: transform .15s; transform: rotate(-90deg); }
+button.nav-fold.open svg { transform: none; }

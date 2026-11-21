@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Gem, MapPin, MessageSquare, Sparkles, Users } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { costFor, guestCounts, isAbroad, money, monthsBetween, today, top3, totals } from '../../shared/logic';
 import { useStore } from '../store';
 import { fmtDate, Stars, tint } from '../components/ui';
 
 export default function Dashboard() {
-  const { state, scenarioId, setScenarioId, ringUnlocked } = useStore();
+  const { state, scenarioId, setScenarioId } = useStore();
   const cur = state.settings.currency;
   const g = guestCounts(state);
-  const open = state.notes.filter((n) => !n.resolved).length;
-  const venues = state.options.filter((o) => o.categoryId === 'venue' && o.status !== 'rejected');
+  const live = state.places.filter((p) => p.status !== 'rejected');
+  const ceremony = live.filter((p) => p.kind === 'ceremony').length;
+  const reception = live.filter((p) => p.kind === 'reception').length;
+  const both = live.filter((p) => p.kind === 'both').length;
   const t = totals(state, scenarioId);
   const budgetPct = Math.min(100, (t.estimate / Math.max(1, state.settings.totalBudget)) * 100);
 
@@ -18,10 +20,9 @@ export default function Dashboard() {
       <div className="hero" style={{ marginBottom: 26 }}>
         <div className="eyebrow">Our wedding, together</div>
         <h1 style={{ margin: '8px 0 6px', fontSize: '3rem' }}>{state.settings.coupleNames}</h1>
-        <div className="muted">Three possible dates, one planner. Pick a plan to see everything through it.</div>
       </div>
 
-      <div className="grid g3" style={{ marginBottom: 26 }}>
+      <div className="grid g3" style={{ marginBottom: 22 }}>
         {state.scenarios.map((s) => {
           const months = monthsBetween(today(), s.date);
           const days = Math.max(0, Math.round(months * 30.4375));
@@ -54,7 +55,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      <div className="grid g4" style={{ marginBottom: 26 }}>
+      <div className="grid g3">
         <Link to="/budget" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
           <div className="tiny muted">Estimated spend</div>
           <div className="stat">{money(t.estimate, cur)}</div>
@@ -66,34 +67,12 @@ export default function Dashboard() {
           <div className="stat">{g.yes}<span className="muted small"> + {g.maybe} maybe</span></div>
           <div className="tiny muted" style={{ marginTop: 10 }}>Yabi {g.yabi.yes + g.yabi.maybe} · Johnny {g.johnny.yes + g.johnny.maybe}</div>
         </Link>
-        <Link to="/c/venue" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
-          <div className="tiny muted">Venues in the running</div>
-          <div className="stat">{venues.length}</div>
-          <div className="tiny muted" style={{ marginTop: 10 }}>{venues.filter((v) => isAbroad(v, state.settings.homeCountry)).length} abroad</div>
-        </Link>
-        <Link to="/discussions" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
-          <div className="tiny muted">Open discussions</div>
-          <div className="stat">{open}</div>
-          <div className="tiny muted" style={{ marginTop: 10 }}>Review the log →</div>
+        <Link to="/places" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
+          <div className="tiny muted">Locations</div>
+          <div className="stat">{state.places.filter((p) => p.status !== 'rejected').length}</div>
+          <div className="tiny muted" style={{ marginTop: 10 }}>{ceremony} ceremony · {reception} reception{both ? ` · ${both} both` : ''}</div>
         </Link>
       </div>
-
-      <div className="row between" style={{ marginBottom: 12 }}><h2>Jump to</h2></div>
-      <div className="grid g3">
-        <Link to="/assistant" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
-          <Sparkles size={20} color="var(--accent)" /><h3 style={{ margin: '10px 0 4px' }}>Ask Claude</h3>
-          <div className="small muted">Paste a venue link and let the assistant add it, rank it, or update the guest list.</div>
-        </Link>
-        <Link to="/decisions" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
-          <MessageSquare size={20} color="var(--accent)" /><h3 style={{ margin: '10px 0 4px' }}>Decision tree</h3>
-          <div className="small muted">Map out “if this, then that”: {state.tree.nodes.length} ideas connected.</div>
-        </Link>
-        <Link to="/ring" className="card" style={{ color: 'inherit', textDecoration: 'none' }}>
-          <Gem size={20} color="var(--accent)" /><h3 style={{ margin: '10px 0 4px' }}>Ring & proposal</h3>
-          <div className="small muted">{ringUnlocked ? `${state.rings.length} rings · ${state.proposals.length} proposal ideas tracked.` : '🔒 Private — password required.'}</div>
-        </Link>
-      </div>
-      <div className="tiny muted" style={{ marginTop: 18 }}><Users size={12} style={{ verticalAlign: -2 }} /> <ArrowRight size={12} style={{ verticalAlign: -2 }} /> Plans are edited on the <Link to="/timeline">Timelines</Link> page.</div>
     </div>
   );
 }

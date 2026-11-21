@@ -202,6 +202,7 @@ export function seedState(): AppState {
     checklist,
     guests: [],
     ideas: [],
+    places: [],
     ringBrief: { ...blankRingBrief(), ...HER_RING },
     ringHints: [],
     jewelers: [],

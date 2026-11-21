@@ -35,7 +35,7 @@ export default function Backdrop() {
   }, []);
   // Re-shuffled on every page change (and every load), so the spots and the pictures keep moving.
   const placed = useMemo(() => {
-    const slots = shuffle(SLOTS).slice(0, 4 + Math.floor(Math.random() * 3));
+    const slots = shuffle(SLOTS).slice(0, 2 + Math.floor(Math.random() * 2));
     const order = shuffle(pics);
     return slots.map((slot, i) => ({ slot, src: order[i % order.length], tilt: Math.round((Math.random() * 2 - 1) * 18) }));
   }, [pathname, pics]);

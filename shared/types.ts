@@ -261,6 +261,29 @@ export interface Idea {
   createdAt: string;
 }
 
+export type PlaceKind = 'ceremony' | 'reception' | 'both' | 'other';
+
+/** A location the couple is considering: where to marry, where to celebrate, or somewhere that does both. */
+export interface Place {
+  id: string;
+  name: string;
+  kind: PlaceKind;
+  url: string;
+  /** City / area. */
+  location: string;
+  country: string;
+  /** Path of a saved thumbnail, or ''. */
+  image: string;
+  /** Guests it holds (0 = unknown). */
+  capacity: number;
+  /** Rough cost (0 = unknown). */
+  cost: number;
+  status: Status;
+  rating: number;
+  note: string;
+  createdAt: string;
+}
+
 export interface AppState {
   version: number;
   settings: Settings;
@@ -278,6 +301,7 @@ export interface AppState {
   checklist: ChecklistItem[];
   guests: Guest[];
   ideas: Idea[];
+  places: Place[];
   ringBrief: RingBrief;
   ringHints: RingHint[];
   jewelers: Jeweler[];

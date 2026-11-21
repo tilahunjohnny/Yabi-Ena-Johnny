@@ -150,6 +150,7 @@ export function migrateState(input: AppState): AppState {
     settings: { ...input.settings, homeCountry: input.settings.homeCountry ?? 'United States' },
     guests: input.guests ?? [],
     ideas: input.ideas ?? [],
+    places: input.places ?? [],
     ringBrief: { ...blankRingBrief(), ...(input.ringBrief ?? {}) },
     ringHints: input.ringHints ?? [],
     jewelers: (input.jewelers ?? []).map((j) => ({ ...j, quotes: j.quotes ?? [] })),
