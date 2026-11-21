@@ -1,5 +1,6 @@
 import { AppState, BudgetLine, Category, Guest, uid } from './types';
 import { balanceToTotal } from './budget';
+import { withPlaceFor } from './places';
 import { blankRingBrief, HER_RING, FIRST_JEWELER, ROEN_QUOTE, CATEGORY_SEED, MILESTONE_TEMPLATE, NEW_CHECKLIST, PLAN_SEED } from './seed';
 
 /** Shares the original template used for the budget, to tell untouched defaults from edits. */
@@ -173,6 +174,10 @@ export function migrateState(input: AppState): AppState {
   if (v < 10) {
     // Roen's first quote, added once and only if nothing has been logged for it yet.
     s = { ...s, version: 10, jewelers: s.jewelers.map((j) => (j.url === FIRST_JEWELER.url && j.quotes.length === 0 ? { ...j, status: 'quoted' as const, quotes: [{ id: uid('q'), date: new Date().toISOString().slice(0, 10), ...ROEN_QUOTE }] } : j)) };
+  }
+  if (v < 11) {
+    // Every venue already in the Venues category also goes on the Locations list.
+    s = { ...s, version: 11, places: s.options.filter((o) => o.categoryId === 'venue').reduce((acc, o) => withPlaceFor(acc, o), s.places) };
   }
   return s;
 }

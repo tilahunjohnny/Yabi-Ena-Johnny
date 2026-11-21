@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
-import { costFor, guestCounts, isAbroad, money, monthsBetween, today, top3, totals } from '../../shared/logic';
+import { guestCounts, money, monthsBetween, today, totals } from '../../shared/logic';
 import { useStore } from '../store';
-import { fmtDate, Stars, tint } from '../components/ui';
+import { fmtDate, tint } from '../components/ui';
 
 export default function Dashboard() {
   const { state, scenarioId, setScenarioId } = useStore();
@@ -26,7 +25,6 @@ export default function Dashboard() {
         {state.scenarios.map((s) => {
           const months = monthsBetween(today(), s.date);
           const days = Math.max(0, Math.round(months * 30.4375));
-          const lead = top3(state, 'venue', s.id)[0];
           const est = totals(state, s.id).estimate;
           const done = s.milestones.filter((m) => m.done).length;
           const active = scenarioId === s.id;
@@ -39,16 +37,6 @@ export default function Dashboard() {
               <div className="count" style={{ fontFamily: 'var(--serif)', fontSize: '3rem', fontWeight: 600, lineHeight: 1.05, margin: '8px 0 2px' }}>{days}<span className="small muted" style={{ fontFamily: 'var(--sans)', marginLeft: 8, fontSize: '.85rem' }}>days to go</span></div>
               <div className="small muted">{fmtDate(s.date)} · {months.toFixed(1)} months</div>
               <div className="sep" />
-              <div className="tiny muted">Leading venue</div>
-              {lead ? (
-                <Link to="/c/venue" style={{ color: 'inherit', textDecoration: 'none' }}>
-                  <div className="serif" style={{ fontSize: '1.25rem', fontWeight: 600 }}>{lead.name}</div>
-                  <div className="row between small" style={{ marginTop: 2 }}>
-                    <span className="row" style={{ gap: 6 }}>{money(costFor(lead, s), cur)}{lead.country && <span className="muted row" style={{ gap: 3 }}><MapPin size={12} />{isAbroad(lead, state.settings.homeCountry) ? `${lead.country} · abroad` : lead.country}</span>}</span>
-                    <Stars value={lead.rating} size={12} />
-                  </div>
-                </Link>
-              ) : <div className="small muted">None yet. <Link to="/c/venue">Add a venue →</Link></div>}
               <div className="row between tiny muted" style={{ marginTop: 12 }}><span>Est. {money(est, cur)}</span><span>{done}/{s.milestones.length} milestones</span></div>
             </div>
           );

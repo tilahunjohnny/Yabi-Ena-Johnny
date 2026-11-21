@@ -1,5 +1,6 @@
 import { AppState, Guest, Idea, Place, PlaceKind, Option, PriceTier, Status, TreeEdge, TreeNode, Weekday, uid } from './types';
 import { detectSource, normalizeUrl } from './ideas';
+import { withPlaceFor } from './places';
 import { dayLabel, moveOption } from './logic';
 
 /** Tool schemas exposed to the Claude assistant. (fetch_url is handled by the server.) */
@@ -346,7 +347,8 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       };
       opt = applyHeadline(opt, input.headline_days);
       const priced = opt.tiers.length ? ` with ${opt.tiers.length} day-based price${opt.tiers.length > 1 ? 's' : ''}` : '';
-      return { state: { ...state, options: [...state.options, opt] }, message: `Added option ${opt.id} "${opt.name}" to ${cat.name}${priced}.`, action: `Added "${opt.name}" to ${cat.name}${priced}` };
+      const places = cat.id === 'venue' ? withPlaceFor(state.places, opt) : state.places; // venues also show on the Locations list
+      return { state: { ...state, places, options: [...state.options, opt] }, message: `Added option ${opt.id} "${opt.name}" to ${cat.name}${priced}.`, action: `Added "${opt.name}" to ${cat.name}${priced}` };
     }
     case 'update_option': {
       const o = findOption(state, input.option);

@@ -1,4 +1,4 @@
-import { IdeaSource, PlaceKind } from './types';
+import { IdeaSource, Option, Place, PlaceKind, uid } from './types';
 import { detectSource } from './ideas';
 
 /** Where a pasted link belongs. */
@@ -40,3 +40,20 @@ export function classifyLink(url: string, title = '', description = ''): Verdict
 }
 
 export const KIND_LABEL: Record<PlaceKind, string> = { ceremony: 'Ceremony', reception: 'Reception', both: 'Ceremony + reception', other: 'Other' };
+
+/** A venue from the Venues category as a Locations entry (kind guessed from its name and notes; venues default to reception). */
+export function placeFromOption(o: Option): Place {
+  const v = classifyLink(o.url, o.name, `${o.location} ${o.notes}`);
+  const capacity = Number(/(\d[\d,]*)/.exec(Object.entries(o.custom ?? {}).find(([k]) => /capacity|guests|seats|holds/i.test(k))?.[1] ?? '')?.[1].replace(/,/g, '')) || 0;
+  return {
+    id: uid('place'), name: o.name, kind: v.destination === 'idea' ? 'reception' : v.destination, url: o.url ?? '', location: o.location ?? '', country: o.country ?? '', image: '',
+    capacity, cost: o.cost || 0, status: o.status, rating: o.rating || 0, note: [o.notes, o.pros && `+ ${o.pros}`, o.cons && `− ${o.cons}`].filter(Boolean).join('\n'), createdAt: o.createdAt || new Date().toISOString(),
+  };
+}
+
+/** Adds a venue option to the list unless the same link or name is already there. */
+export function withPlaceFor(places: Place[], o: Option): Place[] {
+  const key = o.name.trim().toLowerCase();
+  if (places.some((p) => (o.url && p.url === o.url) || p.name.trim().toLowerCase() === key)) return places;
+  return [placeFromOption(o), ...places];
+}
