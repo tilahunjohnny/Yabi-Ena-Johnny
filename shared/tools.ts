@@ -231,6 +231,7 @@ export const TOOL_DEFS = [
       properties: {
         name: { type: 'string' }, side: { type: 'string', enum: ['yabi', 'johnny'] }, status: { type: 'string', enum: ['yes', 'maybe'] },
         group: { type: 'string', description: 'e.g. Family, Friends, Work' }, notes: { type: 'string' },
+        small_wedding: { type: 'boolean', description: 'Part of the smaller inner-circle wedding list' },
       },
       required: ['name', 'side'],
     },
@@ -243,7 +244,7 @@ export const TOOL_DEFS = [
       properties: {
         guest: { type: 'string', description: 'Guest id or (part of) their name' },
         name: { type: 'string' }, side: { type: 'string', enum: ['yabi', 'johnny'] }, status: { type: 'string', enum: ['yes', 'maybe'] },
-        group: { type: 'string' }, notes: { type: 'string' },
+        group: { type: 'string' }, notes: { type: 'string' }, small_wedding: { type: 'boolean', description: 'Include in (true) or remove from (false) the smaller wedding list' },
       },
       required: ['guest'],
     },
@@ -502,7 +503,7 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
     }
     case 'add_guest': {
       const side = norm(input.side).startsWith('j') ? 'johnny' : 'yabi';
-      const g: Guest = { id: uid('g'), name: String(input.name), side, status: input.status === 'maybe' ? 'maybe' : 'yes', group: input.group ?? '', notes: input.notes ?? '', createdAt: new Date().toISOString() };
+      const g: Guest = { id: uid('g'), name: String(input.name), side, status: input.status === 'maybe' ? 'maybe' : 'yes', group: input.group ?? '', notes: input.notes ?? '', ...(input.small_wedding ? { inner: true } : {}), createdAt: new Date().toISOString() };
       return { state: { ...state, guests: [...state.guests, g] }, message: `Added ${g.name} (${side}, ${g.status}).`, action: `Added guest ${g.name} (${side === 'yabi' ? "Yabi's" : "Johnny's"} side)` };
     }
     case 'update_guest': {
@@ -512,6 +513,7 @@ export function applyTool(state: AppState, name: string, input: Record<string, a
       const next: Guest = { ...g };
       if (input.name !== undefined) next.name = String(input.name);
       if (input.group !== undefined) next.group = String(input.group);
+      if (input.small_wedding !== undefined) next.inner = !!input.small_wedding;
       if (input.notes !== undefined) next.notes = String(input.notes);
       if (input.status === 'yes' || input.status === 'maybe') next.status = input.status;
       if (input.side !== undefined) next.side = norm(input.side).startsWith('j') ? 'johnny' : 'yabi';

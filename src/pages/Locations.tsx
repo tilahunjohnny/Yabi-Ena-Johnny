@@ -166,14 +166,14 @@ export default function Locations() {
                         {p.cost > 0 && <span>{money(p.cost, cur)}</span>}
                       </div>
                       {p.note && <div className="small muted" style={{ marginTop: 6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.note}</div>}
-                      <div className="row" style={{ gap: 6, marginTop: 12 }}>
-                        <select value={p.kind} onChange={(e) => patch(p.id, { kind: e.target.value as PlaceKind })} aria-label="Move to" style={{ width: 'auto', padding: '5px 8px', fontSize: 12.5 }}>
+                      <div className="place-actions">
+                        <select value={p.kind} onChange={(e) => patch(p.id, { kind: e.target.value as PlaceKind })} aria-label="Move to">
                           {KINDS.map((x) => <option key={x} value={x}>{KIND_LABEL[x]}</option>)}
                         </select>
-                        <select value={p.status} onChange={(e) => patch(p.id, { status: e.target.value as Status })} aria-label="Status" style={{ width: 'auto', padding: '5px 8px', fontSize: 12.5 }}>
+                        <select value={p.status} onChange={(e) => patch(p.id, { status: e.target.value as Status })} aria-label="Status">
                           {STATUSES.map((x) => <option key={x} value={x}>{STATUS_LABEL[x]}</option>)}
                         </select>
-                        <span style={{ marginLeft: 'auto' }} className="row">
+                        <span className="place-icons">
                           {p.url && <a className="btn sm ghost icon" href={p.url} target="_blank" rel="noreferrer" title="Open link"><ExternalLink size={14} /></a>}
                           <button className="btn sm ghost icon" title="Edit" onClick={() => setEdit({ p, isNew: false })}><Pencil size={14} /></button>
                           <button className="btn sm ghost icon danger" title="Delete" onClick={() => remove(p)}><Trash2 size={14} /></button>
